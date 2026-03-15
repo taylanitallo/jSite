@@ -10,6 +10,131 @@ import React, { useState, useEffect, useRef } from "react";
 
 const MUNICIPIOS_CE = ["Abaiara","Acaraú","Acopiara","Aiuaba","Alcântaras","Altaneira","Alto Santo","Amontada","Antonina do Norte","Apuiarés","Aquiraz","Aracati","Aracoiaba","Ararenda","Araripe","Aratuba","Arneiroz","Assaré","Aurora","Baixio","Banabuiú","Barbalha","Barreira","Barro","Barroquinha","Baturité","Beberibe","Bela Cruz","Boa Viagem","Brejo Santo","Camocim","Campos Sales","Canindé","Capistrano","Caridade","Caririaçu","Cariús","Carnaubal","Cascavel","Catarina","Catunda","Caucaia","Cedro","Chaval","Choró","Chorozinho","Coreaú","Crateús","Crato","Croatá","Cruz","Deputado Irapuan Pinheiro","Ererê","Eusébio","Farias Brito","Forquilha","Fortaleza","Fortim","Frecheirinha","General Sampaio","Graça","Granja","Granjeiro","Groaíras","Guaiúba","Guaraciaba do Norte","Guaramiranga","Hidrolândia","Horizonte","Ibaretama","Ibiapina","Ibicuitinga","Icapuí","Icó","Iguatu","Independência","Ipaporanga","Ipaumirim","Ipu","Ipueiras","Iracema","Irauçuba","Itaiçaba","Itaitinga","Itapajé","Itapipoca","Itapiúna","Itarema","Itatira","Jaguaretama","Jaguaribara","Jaguaribe","Jaguaruana","Jardim","Jati","Jijoca de Jericoacoara","Juazeiro do Norte","Jucás","Lavras da Mangabeira","Limoeiro do Norte","Madalena","Maracanaú","Maranguape","Marco","Martinópole","Massapê","Mauriti","Meruoca","Milagres","Milhã","Miraíma","Missão Velha","Mombaça","Monsenhor Tabosa","Morada Nova","Moraújo","Morrinhos","Mucambo","Mulungu","Nova Olinda","Nova Russas","Novo Oriente","Ocara","Orós","Pacajus","Pacatuba","Pacoti","Pacujá","Palhano","Palmácia","Paracuru","Paraipaba","Parambu","Paramoti","Pedra Branca","Penaforte","Pentecoste","Pereiro","Pindoretama","Piquet Carneiro","Pires Ferreira","Poranga","Porteiras","Potengi","Potiretama","Quiterianópolis","Quixadá","Quixelô","Quixeramobim","Quixeré","Redenção","Reriutaba","Russas","Saboeiro","Salitre","Santa Quitéria","Santana do Acaraú","Santana do Cariri","São Benedito","São Gonçalo do Amarante","São João do Jaguaribe","São Luís do Curu","Senador Pompeu","Senador Sá","Sobral","Solonópole","Tabuleiro do Norte","Tamboril","Tarrafas","Tauá","Tejuçoca","Tianguá","Trairi","Tururu","Ubajara","Umirim","Uruburetama","Uruoca","Varjota","Várzea Alegre","Viçosa do Ceará"];
 
+interface ClientUserShape {
+  id: string; nome: string; login: string; senha: string;
+  entidadeId: string; secretariaId: string;
+  cargo?: string; telefone?: string; foto?: string;
+}
+
+function ClientSettingsTab({ user, isDarkMode, onSave }: {
+  user: ClientUserShape;
+  isDarkMode: boolean;
+  onSave: (patch: Partial<ClientUserShape>) => void;
+}) {
+  const [nome, setNome] = useState(user.nome ?? "");
+  const [login, setLogin] = useState(user.login ?? "");
+  const [telefone, setTelefone] = useState(user.telefone ?? "");
+  const [cargo, setCargo] = useState(user.cargo ?? "");
+  const [foto, setFoto] = useState(user.foto ?? "");
+  const [salvo, setSalvo] = useState(false);
+  const [senhaAtual, setSenhaAtual] = useState("");
+  const [novaSenha, setNovaSenha] = useState("");
+  const [confSenha, setConfSenha] = useState("");
+  const [senhaErro, setSenhaErro] = useState("");
+  const [senhaSalvo, setSenhaSalvo] = useState(false);
+
+  const inputCls = isDarkMode
+    ? "w-full p-3 bg-slate-800 border border-purple-500/20 rounded-lg text-white focus:outline-none focus:border-purple-500"
+    : "w-full p-3 bg-white border border-gray-300 rounded-lg text-slate-900 focus:outline-none focus:border-purple-500";
+  const labelCls = isDarkMode
+    ? "text-gray-300 text-sm font-medium mb-2 block"
+    : "text-gray-700 text-sm font-medium mb-2 block";
+
+  const handleSalvarPerfil = () => {
+    onSave({ nome, login, telefone, cargo, foto });
+    setSalvo(true);
+    setTimeout(() => setSalvo(false), 3000);
+  };
+
+  const handleAlterarSenha = () => {
+    setSenhaErro("");
+    if (senhaAtual !== user.senha) { setSenhaErro("Senha atual incorreta."); return; }
+    if (novaSenha.length < 4) { setSenhaErro("A nova senha deve ter pelo menos 4 caracteres."); return; }
+    if (novaSenha !== confSenha) { setSenhaErro("As senhas não coincidem."); return; }
+    onSave({ senha: novaSenha });
+    setSenhaAtual(""); setNovaSenha(""); setConfSenha("");
+    setSenhaSalvo(true);
+    setTimeout(() => setSenhaSalvo(false), 3000);
+  };
+
+  return (
+    <div className="max-w-2xl">
+      <h1 className="text-3xl font-bold mb-8 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-cyan-400">Configurações da Conta</h1>
+      <div className="space-y-6">
+        <Card className={isDarkMode ? "bg-slate-900/50 border-purple-500/20" : "bg-white border-gray-200 shadow-lg"}>
+          <CardHeader><CardTitle className={isDarkMode ? "text-white" : "text-slate-900"}>Informações Pessoais</CardTitle></CardHeader>
+          <CardContent className="space-y-5">
+            <div className="flex items-center gap-5">
+              <div className="flex-shrink-0">
+                {foto
+                  ? <img src={foto} alt={nome} className="w-20 h-20 rounded-full object-cover border-4 border-purple-500" />
+                  : <div className="w-20 h-20 rounded-full border-4 border-purple-500 flex items-center justify-center bg-slate-700 text-gray-400"><Users className="w-8 h-8" /></div>
+                }
+              </div>
+              <div className="flex flex-col gap-2">
+                <label className="cursor-pointer">
+                  <span className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition ${isDarkMode ? "border-purple-500/40 text-purple-400 hover:bg-purple-500/10" : "border-purple-400 text-purple-600 hover:bg-purple-50"}`}>
+                    {foto ? "Alterar foto" : "Adicionar foto"}
+                  </span>
+                  <input type="file" accept="image/*" className="hidden" onChange={e => {
+                    const f = e.target.files?.[0];
+                    if (!f) return;
+                    const reader = new FileReader();
+                    reader.onload = ev => setFoto(ev.target?.result as string);
+                    reader.readAsDataURL(f);
+                  }} />
+                </label>
+                {foto && (
+                  <button onClick={() => setFoto("")} className={`text-xs text-left ${isDarkMode ? "text-gray-500 hover:text-red-400" : "text-gray-400 hover:text-red-500"}`}>Remover foto</button>
+                )}
+              </div>
+            </div>
+            <div className="grid md:grid-cols-2 gap-4">
+              <div><label className={labelCls}>Nome Completo</label><input type="text" value={nome} onChange={e => setNome(e.target.value)} className={inputCls} /></div>
+              <div><label className={labelCls}>Cargo</label><input type="text" value={cargo} onChange={e => setCargo(e.target.value)} className={inputCls} /></div>
+              <div><label className={labelCls}>E-mail / Login</label><input type="email" value={login} onChange={e => setLogin(e.target.value)} className={inputCls} /></div>
+              <div><label className={labelCls}>Telefone</label><input type="tel" value={telefone} onChange={e => setTelefone(e.target.value)} className={inputCls} /></div>
+            </div>
+            <div className="flex items-center gap-3">
+              <Button onClick={handleSalvarPerfil} className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700">Salvar Alterações</Button>
+              {salvo && <span className="text-green-400 text-sm font-medium">✓ Salvo com sucesso!</span>}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className={isDarkMode ? "bg-slate-900/50 border-purple-500/20" : "bg-white border-gray-200 shadow-lg"}>
+          <CardHeader><CardTitle className={isDarkMode ? "text-white" : "text-slate-900"}>Alterar Senha</CardTitle></CardHeader>
+          <CardContent className="space-y-4">
+            <div><label className={labelCls}>Senha Atual</label><input type="password" value={senhaAtual} onChange={e => setSenhaAtual(e.target.value)} placeholder="••••••••" className={inputCls} /></div>
+            <div><label className={labelCls}>Nova Senha</label><input type="password" value={novaSenha} onChange={e => setNovaSenha(e.target.value)} placeholder="••••••••" className={inputCls} /></div>
+            <div><label className={labelCls}>Confirmar Nova Senha</label><input type="password" value={confSenha} onChange={e => setConfSenha(e.target.value)} placeholder="••••••••" className={inputCls} /></div>
+            {senhaErro && <p className="text-red-400 text-sm">{senhaErro}</p>}
+            <div className="flex items-center gap-3">
+              <Button onClick={handleAlterarSenha} className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700">Alterar Senha</Button>
+              {senhaSalvo && <span className="text-green-400 text-sm font-medium">✓ Senha alterada!</span>}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+const ARTIGO_MAX_MESES: Record<string, number> = { art106: 60, art107: 120, art114: 180 };
+const ARTIGO_NOMES: Record<string, string> = {
+  art106: "Art. 106, §2º — máx. 60 meses (5 anos)",
+  art107: "Art. 107 — máx. 120 meses (10 anos)",
+  art114: "Art. 114 — máx. 180 meses (15 anos)",
+};
+const calcMesesDMY = (d1: string, d2: string): number => {
+  const p1 = d1.split('/'); const p2 = d2.split('/');
+  if (p1.length < 3 || p2.length < 3) return 0;
+  const m1 = parseInt(p1[1]); const y1 = parseInt(p1[2]);
+  const m2 = parseInt(p2[1]); const y2 = parseInt(p2[2]);
+  if (!y1 || !y2) return 0;
+  return (y2 - y1) * 12 + (m2 - m1) + 1;
+};
+
 export default function App() {
   const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
   const productDetailRef = useRef<HTMLDivElement>(null);
@@ -19,6 +144,7 @@ export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
+  const [loginError, setLoginError] = useState("");
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [currentModal, setCurrentModal] = useState<string | null>(null); // 'contract', 'invoices', 'reports', 'settings'
 
@@ -241,6 +367,9 @@ export default function App() {
     valorMensal: string;
     quantidadeMeses: string;
     arquivo: string;
+    artigo?: string;
+    dataEncerramentoOriginal?: string;
+    valorMensalOriginal?: string;
     aditivos: Aditivo[];
   }
   interface SecretariaData {
@@ -248,10 +377,10 @@ export default function App() {
     contratos: Contrato[];
     sistemasContratados: Array<{ nome: string; status: string; dataInicio: string; }>;
     notasFiscais: Array<{ numero: string; data: string; dataVencimento: string; referencia: string; valor: string; status: string; arquivo: string; comprovante: string; dataPagamento: string; }>;
-    relatorios: Array<{ titulo: string; data: string; tipo: string; arquivo: string; }>;
+    relatorios: Array<{ titulo: string; data: string; tipo: string; arquivo: string; referencia: string; }>;
   }
   interface Entidade { id: string; nome: string; tipo: string; cidade: string; responsavel: string; cnpj: string; telefone: string; ativo: boolean; secretarias: SecretariaData[]; }
-  interface ClientUser { id: string; nome: string; login: string; senha: string; entidadeId: string; secretariaId: string; }
+  interface ClientUser { id: string; nome: string; login: string; senha: string; entidadeId: string; secretariaId: string; cargo?: string; telefone?: string; foto?: string; }
   const emptySecretaria = (id: string, nome: string): SecretariaData => ({
     id, nome, cnpj: "", responsavel: "", cargo: "", telefone: "", foto: "",
     contratos: [], sistemasContratados: [], notasFiscais: [], relatorios: []
@@ -265,6 +394,9 @@ export default function App() {
   const [loggedInUser, setLoggedInUser] = useState<ClientUser | null>(null);
   // Admin portal — subtabs e seleção de entidade/secretaria
   const [adminClientSubSection, setAdminClientSubSection] = useState<"entidades" | "usuarios">("entidades");
+  const [entidadeInternalTab, setEntidadeInternalTab] = useState<"secretarias" | "usuarios">("secretarias");
+  const [entSecretariaSearch, setEntSecretariaSearch] = useState("");
+  const [entUsuarioSearch, setEntUsuarioSearch] = useState("");
   const [adminSelEntidadeId, setAdminSelEntidadeId] = useState<string | null>(null);
   const [adminSelSecretariaId, setAdminSelSecretariaId] = useState<string | null>(null);
   const [adminDataTab, setAdminDataTab] = useState<"contrato" | "sistemas" | "nfs" | "relatorios">("contrato");
@@ -276,10 +408,25 @@ export default function App() {
   const [novaEntidadeForm, setNovaEntidadeForm] = useState({ nome: "", tipo: "", cidade: "", responsavel: "", cnpj: "", telefone: "" });
   const [entidadeSearch, setEntidadeSearch] = useState("");
   const [showCidadeDropdown, setShowCidadeDropdown] = useState(false);
+  const [showEntidadeDropdown, setShowEntidadeDropdown] = useState(false);
+  const [entidadeHighlight, setEntidadeHighlight] = useState(0);
+  const [usuarioSearch, setUsuarioSearch] = useState("");
+  const [clientNfSearch, setClientNfSearch] = useState("");
+  const [clientContratoSearch, setClientContratoSearch] = useState("");
+  const [clientRelatorioSearch, setClientRelatorioSearch] = useState("");
+  const [clientContratoExpandido, setClientContratoExpandido] = useState<string | null>(null);
+  const [showMarcarPagoModal, setShowMarcarPagoModal] = useState(false);
+  const [nfPagamentoIdx, setNfPagamentoIdx] = useState<number | null>(null);
+  const [pagamentoMinData, setPagamentoMinData] = useState("");
+  const [pagamentoDataError, setPagamentoDataError] = useState("");
+  const [pagamentoComprovanteNome, setPagamentoComprovanteNome] = useState("");
+  const [nfPagamentoIsEdit, setNfPagamentoIsEdit] = useState(false);
+  const [pagamentoData, setPagamentoData] = useState("");
+  const [pagamentoComprovante, setPagamentoComprovante] = useState("");
   const [cidadeHighlight, setCidadeHighlight] = useState(0);
   const [editSecretariaId, setEditSecretariaId] = useState<string | null>(null);
   const [novaSecretariaForm, setNovaSecretariaForm] = useState({ nome: "", secretario: "", telefone: "" });
-  const [novoUserForm, setNovoUserForm] = useState({ nome: "", login: "", senha: "", entidadeId: "", secretariaId: "" });
+  const [novoUserForm, setNovoUserForm] = useState({ nome: "", login: "", senha: "", entidadeId: "", secretariaId: "", cargo: "", telefone: "", foto: "" });
   const [editUserForm, setEditUserForm] = useState<ClientUser | null>(null);
   const [novaNotaForm, setNovaNotaForm] = useState({ numero: "", data: "", dataVencimento: "", referencia: "", valor: "", status: "Pendente", arquivo: "", comprovante: "", dataPagamento: "" });
   const [editNfIndex, setEditNfIndex] = useState<number | null>(null);
@@ -288,11 +435,17 @@ export default function App() {
   const [nfSearch, setNfSearch] = useState("");
   const MESES = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
   const [refSugestoes, setRefSugestoes] = useState<string[]>([]);
-  const [novoRelatorioForm, setNovoRelatorioForm] = useState({ titulo: "", data: "", tipo: "", arquivo: "" });
+  const [novoRelatorioForm, setNovoRelatorioForm] = useState({ titulo: "", data: "", tipo: "", arquivo: "", referencia: "" });
+  const [editRelatorioIndex, setEditRelatorioIndex] = useState<number | null>(null);
+  const [relatorioSearch, setRelatorioSearch] = useState("");
+  const [relSugestoes, setRelSugestoes] = useState<string[]>([]);
+  const [sisSugestoes, setSisSugestoes] = useState<string[]>([]);
+  const [contratoSearch, setContratoSearch] = useState("");
+  const [sistemaSearch, setSistemaSearch] = useState("");
   const [novoSistemaForm, setNovoSistemaForm] = useState({ nome: "", status: "Ativo", dataInicio: "" });
   const [editSistemaIndex, setEditSistemaIndex] = useState<number | null>(null);
   // Contrato — states
-  const emptyContratoForm = () => ({ numero: "", objeto: "", numeroLicitacao: "", dataInicial: "", dataEncerramento: "", valorMensal: "", quantidadeMeses: "", arquivo: "" });
+  const emptyContratoForm = () => ({ numero: "", objeto: "", numeroLicitacao: "", dataInicial: "", dataEncerramento: "", valorMensal: "", quantidadeMeses: "", arquivo: "", artigo: "" });
   const emptyAditivoForm = () => ({ numero: "", objeto: "", tipos: [] as string[], dataInicial: "", dataEncerramento: "", novoValorMensal: "", arquivo: "" });
   const [showContratoModal, setShowContratoModal] = useState(false);
   const [editContratoId, setEditContratoId] = useState<string | null>(null);
@@ -319,13 +472,24 @@ export default function App() {
     e.preventDefault();
     const user = clientUsers.find(u => u.login === loginEmail && u.senha === loginPassword);
     if (user) {
+      const ent = entidades.find(e => e.id === user.entidadeId);
+      if (ent && !ent.ativo) {
+        setLoginError("Contrato Inativo ou Suspenso, entre em contato com o nosso suporte.");
+        return;
+      }
+      const sec = ent?.secretarias.find(s => s.id === user.secretariaId);
+      if (sec && sec.ativo === false) {
+        setLoginError("Contrato Inativo ou Suspenso, entre em contato com o nosso suporte.");
+        return;
+      }
       setLoggedInUser(user);
       setIsLoggedIn(true);
       setShowLoginModal(false);
       setLoginEmail("");
       setLoginPassword("");
+      setLoginError("");
     } else {
-      alert("E-mail ou senha incorretos.");
+      setLoginError("E-mail ou senha incorretos. Verifique seus dados e tente novamente.");
     }
   };
 
@@ -419,7 +583,6 @@ export default function App() {
     }
   };
 
-  // Auto-play do carrossel de blog preview
   useEffect(() => {
     if (blogPosts.length <= 3) return;
     const timer = setInterval(() => {
@@ -777,7 +940,7 @@ export default function App() {
                     )}
                     {entidades.filter(e => !entidadeSearch.trim() || e.nome.toLowerCase().includes(entidadeSearch.toLowerCase()) || (e.tipo ?? "").toLowerCase().includes(entidadeSearch.toLowerCase())).map(ent => (
                       <Card key={ent.id} className={`transition ${ent.ativo !== false ? "cursor-pointer hover:border-orange-400" : "opacity-60"} ${isDarkMode ? "bg-slate-900/50 border-purple-500/20" : "bg-white border-gray-200 shadow-sm"}`}
-                        onClick={() => ent.ativo !== false && setAdminSelEntidadeId(ent.id)}>
+                        onClick={() => ent.ativo !== false && (setAdminSelEntidadeId(ent.id), setEntidadeInternalTab("secretarias"))}>
                         <CardContent className="p-4 flex items-center justify-between">
                           <div className="flex items-center gap-3">
                             <div className={`p-2 rounded-lg ${ent.ativo !== false ? (isDarkMode ? "bg-orange-500/10" : "bg-orange-50") : (isDarkMode ? "bg-gray-700" : "bg-gray-100")}`}>
@@ -819,60 +982,134 @@ export default function App() {
               {/* ── DENTRO DA ENTIDADE: lista de secretarias ── */}
               {adminClientSubSection === "entidades" && adminSelEntidadeId && !adminSelSecretariaId && selEntidade && (
                 <div>
-                  <div className="flex items-center gap-3 mb-6">
-                    <button onClick={() => setAdminSelEntidadeId(null)} className="text-orange-400 hover:text-orange-300 transition">← Entidades</button>
+                  <div className="flex items-center gap-3 mb-4 flex-wrap">
+                    <button onClick={() => { setAdminSelEntidadeId(null); setEntidadeInternalTab("secretarias"); }} className="text-orange-400 hover:text-orange-300 transition">← Entidades</button>
                     <span className={isDarkMode ? "text-gray-500" : "text-gray-400"}>/</span>
                     <h1 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-400">{selEntidade.nome}</h1>
                     <div className="flex-1" />
                     <div className="flex gap-3">
-                      <Button onClick={() => { setEditSecretariaId(null); setNovaSecretariaForm({ nome: "", secretario: "", telefone: "" }); setShowAddModal("secretaria"); }} className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700">+ Adicionar</Button>
+                      {entidadeInternalTab === "secretarias" && (
+                        <Button onClick={() => { setEditSecretariaId(null); setNovaSecretariaForm({ nome: "", secretario: "", telefone: "" }); setShowAddModal("secretaria"); }} className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700">+ Adicionar</Button>
+                      )}
+                      {entidadeInternalTab === "usuarios" && (
+                        <Button onClick={() => { setNovoUserForm({ nome: "", login: "", senha: "", entidadeId: adminSelEntidadeId, secretariaId: "", cargo: "", telefone: "", foto: "" }); setShowAddModal("usuario"); }} className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700">+ Adicionar</Button>
+                      )}
                       <Button onClick={saveTodo} className={savedFeedback ? "bg-green-600 hover:bg-green-700" : "bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"}>
                         <CheckCircle2 className="w-4 h-4 mr-2" />{savedFeedback ? "Salvo!" : "Salvar"}
                       </Button>
                     </div>
                   </div>
-                  {/* Lista de secretarias */}
-                  <div className="space-y-3">
-                    {selEntidade.secretarias.length === 0 && (
-                      <p className={`text-center py-12 ${isDarkMode ? "text-gray-500" : "text-gray-400"}`}>Nenhuma secretaria cadastrada nesta entidade.</p>
-                    )}
-                    {selEntidade.secretarias.map(sec => (
-                      <Card key={sec.id} className={`transition ${sec.ativo !== false ? "cursor-pointer hover:border-purple-400" : "opacity-60 cursor-default"} ${isDarkMode ? "bg-slate-900/50 border-purple-500/20" : "bg-white border-gray-200 shadow-sm"}`}
-                        onClick={() => { if (sec.ativo !== false) { setAdminSelSecretariaId(sec.id); setAdminDataTab("contrato"); } }}>
-                        <CardContent className="p-4 flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className={`p-2 rounded-lg ${sec.ativo !== false ? (isDarkMode ? "bg-purple-500/10" : "bg-purple-50") : (isDarkMode ? "bg-gray-700" : "bg-gray-100")}`}>
-                              <Users className={`w-5 h-5 ${sec.ativo !== false ? "text-purple-500" : "text-gray-400"}`} />
-                            </div>
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <p className={`font-semibold ${isDarkMode ? "text-white" : "text-slate-900"}`}>{sec.nome}</p>
-                                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${sec.ativo !== false ? "bg-green-500/20 text-green-500" : "bg-gray-400/20 text-gray-400"}`}>{sec.ativo !== false ? "Ativo" : "Inativo"}</span>
-                              </div>
-                              <p className={`text-xs ${isDarkMode ? "text-gray-400" : "text-gray-500"}`}>{sec.responsavel || "Secretário não definido"} · {sec.sistemasContratados.length} sistema(s)</p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <button title={sec.ativo !== false ? "Desativar" : "Ativar"}
-                              onClick={e => { e.stopPropagation(); setEntidades(prev => prev.map(ent => ent.id === adminSelEntidadeId ? { ...ent, secretarias: ent.secretarias.map(s => s.id === sec.id ? { ...s, ativo: !(s.ativo !== false) } : s) } : ent)); }}
-                              className={`p-2 rounded-lg transition ${sec.ativo !== false ? (isDarkMode ? "text-green-400 hover:bg-green-500/10" : "text-green-600 hover:bg-green-50") : (isDarkMode ? "text-gray-500 hover:bg-gray-700" : "text-gray-400 hover:bg-gray-100")}`}>
-                              <Power className="w-4 h-4" />
-                            </button>
-                            <button title="Editar"
-                              onClick={e => { e.stopPropagation(); setEditSecretariaId(sec.id); setNovaSecretariaForm({ nome: sec.nome, secretario: sec.responsavel ?? "", telefone: sec.telefone ?? "" }); setShowAddModal("secretaria"); }}
-                              className={`p-2 rounded-lg transition ${isDarkMode ? "text-purple-400 hover:bg-purple-500/10" : "text-purple-600 hover:bg-purple-50"}`}>
-                              <Pencil className="w-4 h-4" />
-                            </button>
-                            <button title="Excluir"
-                              onClick={e => { e.stopPropagation(); setConfirmDelete({ label: sec.nome, onConfirm: () => setEntidades(prev => prev.map(ent => ent.id === adminSelEntidadeId ? { ...ent, secretarias: ent.secretarias.filter(s => s.id !== sec.id) } : ent)) }); }}
-                              className={`p-2 rounded-lg transition ${isDarkMode ? "text-red-400 hover:bg-red-500/10" : "text-red-500 hover:bg-red-50"}`}>
-                              <span className="text-base">🗑</span>
-                            </button>
-                          </div>
-                        </CardContent>
-                      </Card>
+
+                  {/* Sub-abas */}
+                  <div className="flex gap-2 mb-5">
+                    {(["secretarias", "usuarios"] as const).map(tab => (
+                      <button key={tab} onClick={() => setEntidadeInternalTab(tab)}
+                        className={`px-5 py-2 rounded-xl text-sm font-semibold transition ${entidadeInternalTab === tab ? "bg-gradient-to-r from-purple-600 to-cyan-600 text-white shadow" : isDarkMode ? "bg-slate-800 text-gray-400 hover:text-white" : "bg-gray-100 text-gray-500 hover:text-slate-800"}`}>
+                        {tab === "secretarias" ? "Secretarias" : "Usuários"}
+                      </button>
                     ))}
                   </div>
+
+                  {/* Aba Secretarias */}
+                  {entidadeInternalTab === "secretarias" && (
+                    <div className="space-y-3">
+                      <input type="text" value={entSecretariaSearch} onChange={e => setEntSecretariaSearch(e.target.value)}
+                        placeholder="Pesquisar por nome, secretário, status..."
+                        className={`w-full px-4 py-2 rounded-xl border text-sm mb-1 ${isDarkMode ? "bg-slate-800 border-purple-500/30 text-white placeholder-gray-500" : "bg-white border-gray-300 text-slate-900 placeholder-gray-400"}`} />
+                      {selEntidade.secretarias.length === 0 && (
+                        <p className={`text-center py-12 ${isDarkMode ? "text-gray-500" : "text-gray-400"}`}>Nenhuma secretaria cadastrada nesta entidade.</p>
+                      )}
+                      {selEntidade.secretarias.filter(sec => {
+                        const q = entSecretariaSearch.trim().toLowerCase();
+                        if (!q) return true;
+                        return sec.nome.toLowerCase().includes(q) || (sec.responsavel ?? "").toLowerCase().includes(q) || (sec.ativo !== false ? "ativo" : "inativo").includes(q);
+                      }).map(sec => (
+                        <Card key={sec.id} className={`transition ${sec.ativo !== false ? "cursor-pointer hover:border-purple-400" : "opacity-60 cursor-default"} ${isDarkMode ? "bg-slate-900/50 border-purple-500/20" : "bg-white border-gray-200 shadow-sm"}`}
+                          onClick={() => { if (sec.ativo !== false) { setAdminSelSecretariaId(sec.id); setAdminDataTab("contrato"); } }}>
+                          <CardContent className="p-4 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <div className={`p-2 rounded-lg ${sec.ativo !== false ? (isDarkMode ? "bg-purple-500/10" : "bg-purple-50") : (isDarkMode ? "bg-gray-700" : "bg-gray-100")}`}>
+                                <Users className={`w-5 h-5 ${sec.ativo !== false ? "text-purple-500" : "text-gray-400"}`} />
+                              </div>
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <p className={`font-semibold ${isDarkMode ? "text-white" : "text-slate-900"}`}>{sec.nome}</p>
+                                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${sec.ativo !== false ? "bg-green-500/20 text-green-500" : "bg-gray-400/20 text-gray-400"}`}>{sec.ativo !== false ? "Ativo" : "Inativo"}</span>
+                                </div>
+                                <p className={`text-xs ${isDarkMode ? "text-gray-400" : "text-gray-500"}`}>{sec.responsavel || "Secretário não definido"} · {sec.sistemasContratados.length} sistema(s)</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <button title={sec.ativo !== false ? "Desativar" : "Ativar"}
+                                onClick={e => { e.stopPropagation(); setEntidades(prev => prev.map(ent => ent.id === adminSelEntidadeId ? { ...ent, secretarias: ent.secretarias.map(s => s.id === sec.id ? { ...s, ativo: !(s.ativo !== false) } : s) } : ent)); }}
+                                className={`p-2 rounded-lg transition ${sec.ativo !== false ? (isDarkMode ? "text-green-400 hover:bg-green-500/10" : "text-green-600 hover:bg-green-50") : (isDarkMode ? "text-gray-500 hover:bg-gray-700" : "text-gray-400 hover:bg-gray-100")}`}>
+                                <Power className="w-4 h-4" />
+                              </button>
+                              <button title="Editar"
+                                onClick={e => { e.stopPropagation(); setEditSecretariaId(sec.id); setNovaSecretariaForm({ nome: sec.nome, secretario: sec.responsavel ?? "", telefone: sec.telefone ?? "" }); setShowAddModal("secretaria"); }}
+                                className={`p-2 rounded-lg transition ${isDarkMode ? "text-purple-400 hover:bg-purple-500/10" : "text-purple-600 hover:bg-purple-50"}`}>
+                                <Pencil className="w-4 h-4" />
+                              </button>
+                              <button title="Excluir"
+                                onClick={e => { e.stopPropagation(); setConfirmDelete({ label: sec.nome, onConfirm: () => setEntidades(prev => prev.map(ent => ent.id === adminSelEntidadeId ? { ...ent, secretarias: ent.secretarias.filter(s => s.id !== sec.id) } : ent)) }); }}
+                                className={`p-2 rounded-lg transition ${isDarkMode ? "text-red-400 hover:bg-red-500/10" : "text-red-500 hover:bg-red-50"}`}>
+                                <span className="text-base">🗑</span>
+                              </button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Aba Usuários da Entidade */}
+                  {entidadeInternalTab === "usuarios" && (() => {
+                    const q = entUsuarioSearch.trim().toLowerCase();
+                    const entUsers = clientUsers.filter(u => {
+                      if (u.entidadeId !== adminSelEntidadeId) return false;
+                      if (!q) return true;
+                      const sec = selEntidade.secretarias.find(s => s.id === u.secretariaId);
+                      return u.nome.toLowerCase().includes(q) || u.login.toLowerCase().includes(q) || (sec?.nome ?? "").toLowerCase().includes(q);
+                    });
+                    const allEntUsers = clientUsers.filter(u => u.entidadeId === adminSelEntidadeId);
+                    return (
+                      <div className="space-y-3">
+                        <input type="text" value={entUsuarioSearch} onChange={e => setEntUsuarioSearch(e.target.value)}
+                          placeholder="Pesquisar por nome, e-mail, secretaria..."
+                          className={`w-full px-4 py-2 rounded-xl border text-sm mb-1 ${isDarkMode ? "bg-slate-800 border-purple-500/30 text-white placeholder-gray-500" : "bg-white border-gray-300 text-slate-900 placeholder-gray-400"}`} />
+                        {allEntUsers.length === 0 && (
+                          <p className={`text-center py-12 ${isDarkMode ? "text-gray-500" : "text-gray-400"}`}>Nenhum usuário cadastrado nesta entidade.</p>
+                        )}
+                        {entUsers.map(user => {
+                          const sec = selEntidade.secretarias.find(s => s.id === user.secretariaId);
+                          return (
+                            <Card key={user.id} className={isDarkMode ? "bg-slate-900/50 border-purple-500/20" : "bg-white border-gray-200 shadow-sm"}>
+                              <CardContent className="p-4 flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <div className={`w-10 h-10 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center ${isDarkMode ? "bg-cyan-500/10" : "bg-cyan-50"}`}>
+                                    {user.foto ? <img src={user.foto} alt={user.nome} className="w-full h-full object-cover" /> : <Users className="w-5 h-5 text-cyan-500" />}
+                                  </div>
+                                  <div>
+                                    <p className={`font-semibold ${isDarkMode ? "text-white" : "text-slate-900"}`}>{user.nome}</p>
+                                    {user.cargo && <p className={`text-xs font-medium ${isDarkMode ? "text-cyan-400" : "text-cyan-600"}`}>{user.cargo}</p>}
+                                    <p className={`text-xs ${isDarkMode ? "text-gray-400" : "text-gray-500"}`}>{user.login}</p>
+                                    <p className={`text-xs mt-0.5 ${isDarkMode ? "text-purple-400" : "text-purple-600"}`}>{sec?.nome ?? "Sem secretaria"}</p>
+                                  </div>
+                                </div>
+                                <div className="flex gap-2">
+                                  <Button size="sm" variant="outline" onClick={() => { setEditUserForm({...user}); setShowAddModal("usuario"); }} className={isDarkMode ? "border-purple-500/50 text-purple-400 hover:bg-purple-500/10" : "border-purple-500 text-purple-600 hover:bg-purple-50"}>✎ Editar</Button>
+                                  <Button size="sm" variant="outline" onClick={() => setConfirmDelete({ label: user.nome, onConfirm: () => setClientUsers(prev => prev.filter(u => u.id !== user.id)) })} className="border-red-500/50 text-red-400 hover:bg-red-500/10">🗑</Button>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          );
+                        })}
+                        {q && entUsers.length === 0 && allEntUsers.length > 0 && (
+                          <p className={`text-center py-6 text-sm ${isDarkMode ? "text-gray-500" : "text-gray-400"}`}>Nenhum usuário encontrado para "{entUsuarioSearch}".</p>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
 
@@ -921,13 +1158,31 @@ export default function App() {
                     const valorGlobal = (vm: string, qm: string) => { const v = parseFloat(vm.replace(/[^\d.,]/g,"").replace(",",".")); const q = parseInt(qm); if (!isNaN(v) && !isNaN(q)) return `R$ ${(v*q).toLocaleString("pt-BR",{minimumFractionDigits:2})}`; return "—"; };
                     return (
                     <div className="space-y-4">
-                      <div className="flex justify-end">
-                        <Button onClick={() => { setEditContratoId(null); setContratoForm(emptyContratoForm()); setShowContratoModal(true); }} className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700">+ Novo Contrato</Button>
+                      <div className="flex flex-col sm:flex-row gap-3 mb-2">
+                        <input
+                          type="text"
+                          value={contratoSearch}
+                          onChange={e => setContratoSearch(e.target.value)}
+                          placeholder="Pesquisar por número, objeto, licitação, data..."
+                          className={`flex-1 px-4 py-2 rounded-xl border text-sm ${isDarkMode ? "bg-slate-800 border-purple-500/30 text-white placeholder-gray-500" : "bg-white border-gray-300 text-slate-900 placeholder-gray-400"}`}
+                        />
+                        <Button onClick={() => { setEditContratoId(null); setContratoForm(emptyContratoForm()); setShowContratoModal(true); }} className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 flex-shrink-0">+ Novo Contrato</Button>
                       </div>
                       {(selSecretaria.contratos ?? []).length === 0 && (
                         <p className={`text-center py-10 ${isDarkMode ? "text-gray-500" : "text-gray-400"}`}>Nenhum contrato cadastrado.</p>
                       )}
-                      {(selSecretaria.contratos ?? []).map((ct) => {
+                      {(selSecretaria.contratos ?? []).filter(ct => {
+                        const q = contratoSearch.trim().toLowerCase();
+                        if (!q) return true;
+                        return (
+                          (ct.numero ?? "").toLowerCase().includes(q) ||
+                          (ct.objeto ?? "").toLowerCase().includes(q) ||
+                          (ct.numeroLicitacao ?? "").toLowerCase().includes(q) ||
+                          (ct.dataInicial ?? "").includes(q) ||
+                          (ct.dataEncerramento ?? "").includes(q) ||
+                          (ct.valorMensal ?? "").toLowerCase().includes(q)
+                        );
+                      }).map((ct) => {
                         const aberto = contratoExpandido === ct.id;
                         const vg = valorGlobal(ct.valorMensal, ct.quantidadeMeses);
                         return (
@@ -961,7 +1216,7 @@ export default function App() {
                                       <FileText className="w-4 h-4" />
                                     </span>
                                   )}
-                                  <button title="Editar" onClick={() => { setEditContratoId(ct.id); setContratoForm({ numero: ct.numero, objeto: ct.objeto ?? "", numeroLicitacao: ct.numeroLicitacao, dataInicial: ct.dataInicial, dataEncerramento: ct.dataEncerramento, valorMensal: ct.valorMensal, quantidadeMeses: ct.quantidadeMeses, arquivo: ct.arquivo }); setShowContratoModal(true); }}
+                                  <button title="Editar" onClick={() => { setEditContratoId(ct.id); setContratoForm({ numero: ct.numero, objeto: ct.objeto ?? "", numeroLicitacao: ct.numeroLicitacao, dataInicial: ct.dataInicial, dataEncerramento: ct.dataEncerramento, valorMensal: ct.valorMensal, quantidadeMeses: ct.quantidadeMeses, arquivo: ct.arquivo, artigo: ct.artigo ?? "" }); setShowContratoModal(true); }}
                                     className={`p-2 rounded-lg transition ${isDarkMode ? "text-purple-400 hover:bg-purple-500/10" : "text-purple-600 hover:bg-purple-50"}`}><Pencil className="w-4 h-4" /></button>
                                   <button title="Excluir" onClick={() => setConfirmDelete({ label: `Contrato Nº ${ct.numero}`, onConfirm: () => updSec(s => ({...s, contratos: (s.contratos??[]).filter(c => c.id !== ct.id)})) })}
                                     className={`p-2 rounded-lg transition ${isDarkMode ? "text-red-400 hover:bg-red-500/10" : "text-red-500 hover:bg-red-50"}`}><span className="text-base">🗑</span></button>
@@ -1017,7 +1272,18 @@ export default function App() {
                                               }} className={`p-1.5 rounded inline-flex items-center justify-center ${isDarkMode ? "text-blue-400 hover:bg-blue-500/10" : "text-blue-500 hover:bg-blue-50"}`}>
                                                 <Pencil className="w-3.5 h-3.5" />
                                               </button>
-                                              <button title="Excluir" onClick={() => setConfirmDelete({ label: `Aditivo ${ai+1}`, onConfirm: () => updSec(s => ({...s, contratos: (s.contratos??[]).map(c => c.id===ct.id ? {...c, aditivos: c.aditivos.filter((_,idx)=>idx!==ai)} : c)})) })}
+                                              <button title="Excluir" onClick={() => setConfirmDelete({ label: `Aditivo ${ai+1}`, onConfirm: () => updSec(s => ({...s, contratos: (s.contratos??[]).map(c => {
+                                                if (c.id !== ct.id) return c;
+                                                const novosAds = c.aditivos.filter((_,idx) => idx !== ai);
+                                                // Recalcula dataEncerramento: usa o último aditivo de Prazo restante, ou a data original do contrato
+                                                const toN = (d: string) => { const p=d?.split('/'); return p?.length===3?parseInt(p[2])*10000+parseInt(p[1])*100+parseInt(p[0]):0; };
+                                                const encRecalc = novosAds.filter(a => a.tipos?.includes("Prazo") && a.dataEncerramento).reduce((best, a) => toN(a.dataEncerramento)>toN(best)?a.dataEncerramento:best, "");
+                                                const novaEnc = encRecalc || c.dataEncerramentoOriginal || c.dataEncerramento;
+                                                // Recalcula valorMensal: usa o último aditivo de Acréscimo/Redução restante, ou o valor original
+                                                const vmRecalc = novosAds.filter(a => (a.tipos?.includes("Acréscimo")||a.tipos?.includes("Redução")) && a.novoValorMensal).slice(-1)[0]?.novoValorMensal ?? null;
+                                                const novoVM = vmRecalc ?? c.valorMensalOriginal ?? c.valorMensal;
+                                                return {...c, aditivos: novosAds, dataEncerramento: novaEnc, valorMensal: novoVM};
+                                              })})) })}
                                                 className={`p-1.5 rounded inline-flex items-center justify-center ${isDarkMode ? "text-red-400 hover:bg-red-500/10" : "text-red-500 hover:bg-red-50"}`}><span className="text-sm">🗑</span></button>
                                             </div>
                                           </div>
@@ -1052,6 +1318,18 @@ export default function App() {
                                   <label className={labelClass}>Valor Global</label>
                                   <p className={`px-3 py-2 rounded-lg text-sm font-bold ${isDarkMode ? "bg-slate-800 text-cyan-400" : "bg-gray-100 text-purple-700"}`}>{valorGlobal(contratoForm.valorMensal, contratoForm.quantidadeMeses)}</p>
                                 </div>
+                                <div className="col-span-2">
+                                  <label className={labelClass}>Embasamento Legal — Prazo Máximo (Lei 14.133/2021)</label>
+                                  <select
+                                    value={contratoForm.artigo ?? ""}
+                                    onChange={e => setContratoForm(p => ({...p, artigo: e.target.value}))}
+                                    className={inputClass}>
+                                    <option value="">Não definido</option>
+                                    <option value="art106">Art. 106, §2º — máx. 60 meses no total (5 anos)</option>
+                                    <option value="art107">Art. 107 — máx. 120 meses no total (10 anos)</option>
+                                    <option value="art114">Art. 114 — máx. 180 meses no total (15 anos)</option>
+                                  </select>
+                                </div>
                               </div>
                               <div className="mb-4"><label className={labelClass}>PDF do Contrato (opcional)</label>
                                 {contratoForm.arquivo ? (
@@ -1078,9 +1356,9 @@ export default function App() {
                                 <Button onClick={() => {
                                   if (!contratoForm.numero.trim()) return;
                                   if (editContratoId) {
-                                    updSec(s => ({...s, contratos: (s.contratos??[]).map(c => c.id===editContratoId ? {...c,...contratoForm} : c)}));
+                                    updSec(s => ({...s, contratos: (s.contratos??[]).map(c => c.id===editContratoId ? {...c,...contratoForm, dataEncerramentoOriginal: c.dataEncerramentoOriginal ?? c.dataEncerramento, valorMensalOriginal: c.valorMensalOriginal ?? c.valorMensal} : c)}));
                                   } else {
-                                    const nc: Contrato = { id:`ct_${Date.now()}`, ...contratoForm, aditivos: [] };
+                                    const nc: Contrato = { id:`ct_${Date.now()}`, ...contratoForm, dataEncerramentoOriginal: contratoForm.dataEncerramento, valorMensalOriginal: contratoForm.valorMensal, aditivos: [] };
                                     updSec(s => ({...s, contratos: [...(s.contratos??[]), nc]}));
                                   }
                                   setShowContratoModal(false); setEditContratoId(null); setContratoForm(emptyContratoForm());
@@ -1095,10 +1373,16 @@ export default function App() {
                       {showAditivoModal && (
                         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4" style={{backdropFilter:"blur(4px)",background:"rgba(0,0,0,0.6)"}}
                           onClick={() => { setShowAditivoModal(false); setAditivoParaContratoId(null); setEditAditivoId(null); setAditivoErroValor(null); }}>
-                          <div className={`w-full max-w-2xl rounded-2xl shadow-2xl ${isDarkMode ? "bg-slate-900 border border-purple-500/30" : "bg-white border border-gray-200"}`}
+                          <div className={`w-full max-w-xl rounded-2xl shadow-2xl flex flex-col max-h-[80vh] ${isDarkMode ? "bg-slate-900 border border-purple-500/30" : "bg-white border border-gray-200"}`}
                             onClick={e => e.stopPropagation()}>
-                            <div className="p-6">
-                              <h2 className={`text-lg font-bold mb-5 ${isDarkMode ? "text-white" : "text-slate-900"}`}>{editAditivoId ? "Editar Aditivo" : "Novo Aditivo"}</h2>
+                            {/* Header fixo */}
+                            <div className={`flex items-center justify-between px-5 py-4 border-b flex-shrink-0 ${isDarkMode ? "border-purple-500/20" : "border-gray-200"}`}>
+                              <h2 className={`text-base font-bold ${isDarkMode ? "text-white" : "text-slate-900"}`}>{editAditivoId ? "Editar Aditivo" : "Novo Aditivo"}</h2>
+                              <button onClick={() => { setShowAditivoModal(false); setAditivoParaContratoId(null); setEditAditivoId(null); setAditivoErroValor(null); }} className={`p-1.5 rounded-lg transition ${isDarkMode ? "text-gray-400 hover:bg-slate-700" : "text-gray-500 hover:bg-gray-100"}`}><X className="w-4 h-4" /></button>
+                            </div>
+                            {/* Corpo rolável */}
+                            <div className="p-5 overflow-y-auto flex-1">
+                              
                               {/* Linha 1: Nº do Aditivo + Tipo(s) */}
                               <div className="grid grid-cols-2 gap-4 mb-4 items-start">
                                 <div><label className={labelClass}>Nº do Aditivo</label><input type="text" value={aditivoForm.numero} onChange={e => setAditivoForm(p=>({...p,numero:e.target.value}))} className={inputClass} placeholder="001/2025" autoFocus /></div>
@@ -1123,6 +1407,47 @@ export default function App() {
                                 <div><label className={labelClass}>Data Inicial</label><input type="text" value={aditivoForm.dataInicial} onChange={e => setAditivoForm(p=>({...p,dataInicial:maskDate(e.target.value)}))} className={inputClass} placeholder="DD/MM/AAAA" maxLength={10} /></div>
                                 <div><label className={labelClass}>Data Encerramento</label><input type="text" value={aditivoForm.dataEncerramento} onChange={e => setAditivoForm(p=>({...p,dataEncerramento:maskDate(e.target.value)}))} className={inputClass} placeholder="DD/MM/AAAA" maxLength={10} /></div>
                               </div>
+                              {aditivoForm.tipos.includes("Prazo") && (() => {
+                                const ct = selSecretaria?.contratos?.find(c => c.id === aditivoParaContratoId);
+                                const artigo = ct?.artigo ?? "";
+                                const maxMeses = artigo ? (ARTIGO_MAX_MESES[artigo] ?? null) : null;
+                                // Calcula a data mais recente considerando o contrato + todos aditivos de Prazo já salvos
+                                const toDateNum = (d: string) => { const p = d?.split('/'); return p?.length===3 ? parseInt(p[2])*10000+parseInt(p[1])*100+parseInt(p[0]) : 0; };
+                                const latestEnc = (ct?.aditivos??[]).filter(a => a.tipos?.includes("Prazo") && a.dataEncerramento).reduce((best, a) => toDateNum(a.dataEncerramento)>toDateNum(best)?a.dataEncerramento:best, ct?.dataEncerramento??"");
+                                const mesesUsados = (ct?.dataInicial && latestEnc) ? calcMesesDMY(ct.dataInicial, latestEnc) : 0;
+                                const mesesNovos = (ct?.dataInicial && aditivoForm.dataEncerramento && aditivoForm.dataEncerramento.length === 10) ? calcMesesDMY(ct.dataInicial, aditivoForm.dataEncerramento) : null;
+                                const restantes = maxMeses !== null ? maxMeses - mesesUsados : null;
+                                const ultrapassaria = maxMeses !== null && mesesNovos !== null && mesesNovos > maxMeses;
+                                return (
+                                  <div className={`mb-4 p-3 rounded-xl border text-sm ${
+                                    !artigo ? (isDarkMode ? "border-slate-600 bg-slate-800/50 text-gray-400" : "border-gray-300 bg-gray-50 text-gray-500")
+                                    : ultrapassaria ? "border-red-500/60 bg-red-500/10 text-red-400"
+                                    : restantes === 0 ? "border-orange-500/60 bg-orange-500/10 text-orange-400"
+                                    : (isDarkMode ? "border-cyan-500/40 bg-cyan-500/10 text-cyan-300" : "border-purple-500/40 bg-purple-50 text-purple-700")
+                                  }`}>
+                                    {!artigo ? (
+                                      <p>⚠ Embasamento legal não definido no contrato. Defina o artigo no formulário do contrato para calcular o limite de prorrogação.</p>
+                                    ) : (
+                                      <>
+                                        <p className="font-semibold mb-1">📋 Limite legal: {ARTIGO_NOMES[artigo]}</p>
+                                        <div className="flex flex-wrap gap-x-6 gap-y-1 mt-1">
+                                          <span>Total máximo: <strong>{maxMeses} meses</strong></span>
+                                          <span>Já utilizado: <strong>{mesesUsados} meses</strong></span>
+                                          <span>Disponível para prorrogação: <strong>{restantes} meses</strong></span>
+                                        </div>
+                                        {mesesNovos !== null && (
+                                          <p className={`mt-2 font-medium ${ultrapassaria ? "text-red-400" : "text-green-400"}`}>
+                                            {ultrapassaria
+                                              ? `❌ Nova data resultaria em ${mesesNovos} meses totais — excede o limite em ${mesesNovos - maxMeses!} meses!`
+                                              : `✅ Nova data: ${mesesNovos} meses totais (${maxMeses! - mesesNovos} meses ainda disponíveis)`
+                                            }
+                                          </p>
+                                        )}
+                                      </>
+                                    )}
+                                  </div>
+                                );
+                              })()}
                               {(aditivoForm.tipos.includes("Acréscimo") || aditivoForm.tipos.includes("Redução")) && (
                                 <div className="mb-4"><label className={labelClass}>Novo Valor Mensal (R$)</label><input type="text" value={aditivoForm.novoValorMensal} onChange={e => setAditivoForm(p=>({...p,novoValorMensal:e.target.value}))} className={inputClass} placeholder="0,00" /></div>
                               )}
@@ -1148,10 +1473,12 @@ export default function App() {
                                 )}
                               </div>
                               {aditivoErroValor && (
-                                <p className="text-red-400 text-xs mb-3 mt-1">{aditivoErroValor}</p>
+                                <p className="text-red-400 text-xs mb-1 mt-1">{aditivoErroValor}</p>
                               )}
-                              <div className="flex justify-end gap-3">
-                                <Button variant="outline" onClick={() => { setShowAditivoModal(false); setAditivoParaContratoId(null); setEditAditivoId(null); setAditivoErroValor(null); }} className={isDarkMode ? "border-gray-500 text-black" : "border-gray-400 text-black"}>Cancelar</Button>
+                            </div>
+                            {/* Rodapé fixo com botões */}
+                            <div className={`flex justify-end gap-3 px-5 py-3 border-t flex-shrink-0 ${isDarkMode ? "border-purple-500/20" : "border-gray-200"}`}>
+                              <Button variant="outline" onClick={() => { setShowAditivoModal(false); setAditivoParaContratoId(null); setEditAditivoId(null); setAditivoErroValor(null); }} className={isDarkMode ? "border-gray-500 text-black" : "border-gray-400 text-black"}>Cancelar</Button>
                                 <Button onClick={() => {
                                   if (aditivoForm.tipos.length === 0 || !aditivoForm.dataEncerramento) return;
                                   // Validação de valor para Acréscimo/Redução
@@ -1168,14 +1495,38 @@ export default function App() {
                                       return;
                                     }
                                   }
+                                  // Validação de limite de prazo (Lei 14.133/2021)
+                                  if (aditivoForm.tipos.includes("Prazo") && aditivoForm.dataEncerramento) {
+                                    const contratoAtualPrazo = selSecretaria?.contratos?.find(c => c.id === aditivoParaContratoId);
+                                    if (contratoAtualPrazo?.artigo && contratoAtualPrazo.dataInicial) {
+                                      const maxM = ARTIGO_MAX_MESES[contratoAtualPrazo.artigo] ?? 0;
+                                      const totalM = calcMesesDMY(contratoAtualPrazo.dataInicial, aditivoForm.dataEncerramento);
+                                      if (totalM > maxM) {
+                                        setAditivoErroValor(`O novo prazo ultrapassa o limite legal (${ARTIGO_NOMES[contratoAtualPrazo.artigo]}). O total seria ${totalM} meses, mas o máximo é ${maxM} meses.`);
+                                        return;
+                                      }
+                                    }
+                                  }
                                   setAditivoErroValor(null);
                                   if (editAditivoId) {
                                     // Modo edição
                                     updSec(s => ({...s, contratos: (s.contratos??[]).map(c => {
                                       if (c.id !== aditivoParaContratoId) return c;
-                                      const novaEnc = aditivoForm.tipos.includes("Prazo") ? aditivoForm.dataEncerramento : c.dataEncerramento;
-                                      const novoVM = (aditivoForm.tipos.includes("Acréscimo")||aditivoForm.tipos.includes("Redução")) && aditivoForm.novoValorMensal ? aditivoForm.novoValorMensal : c.valorMensal;
-                                      return {...c, aditivos: c.aditivos.map(a => a.id===editAditivoId ? {...a,...aditivoForm} : a), dataEncerramento: novaEnc, valorMensal: novoVM};
+                                      // Recalcula enc e vm com base em TODOS os aditivos (substituindo o editado)
+                                      const aditivosAtualizados = c.aditivos.map(a => a.id===editAditivoId ? {...a,...aditivoForm} : a);
+                                      const toN2 = (d: string) => { const p=d?.split('/'); return p?.length===3?parseInt(p[2])*10000+parseInt(p[1])*100+parseInt(p[0]):0; };
+                                      const encRecalcEdit = aditivosAtualizados.filter(a => a.tipos?.includes("Prazo") && a.dataEncerramento).reduce((best, a) => toN2(a.dataEncerramento)>toN2(best)?a.dataEncerramento:best, "");
+                                      const novaEnc = encRecalcEdit || c.dataEncerramentoOriginal || c.dataEncerramento;
+                                      const vmRecalcEdit = aditivosAtualizados.filter(a => (a.tipos?.includes("Acréscimo")||a.tipos?.includes("Redução")) && a.novoValorMensal).slice(-1)[0]?.novoValorMensal ?? null;
+                                      const novoVM = vmRecalcEdit ?? c.valorMensalOriginal ?? c.valorMensal;
+                                      return {
+                                        ...c,
+                                        dataEncerramentoOriginal: c.dataEncerramentoOriginal ?? c.dataEncerramento,
+                                        valorMensalOriginal: c.valorMensalOriginal ?? c.valorMensal,
+                                        aditivos: aditivosAtualizados,
+                                        dataEncerramento: novaEnc,
+                                        valorMensal: novoVM
+                                      };
                                     })}));
                                   } else {
                                     // Modo criação
@@ -1183,17 +1534,33 @@ export default function App() {
                                     updSec(s => ({...s, contratos: (s.contratos??[]).map(c => {
                                       if (c.id !== aditivoParaContratoId) return c;
                                       const novosAds = [...c.aditivos, novoAd];
-                                      const novaEnc = aditivoForm.tipos.includes("Prazo") ? aditivoForm.dataEncerramento : c.dataEncerramento;
-                                      const novoVM = (aditivoForm.tipos.includes("Acréscimo")||aditivoForm.tipos.includes("Redução")) && aditivoForm.novoValorMensal ? aditivoForm.novoValorMensal : c.valorMensal;
-                                      return {...c, aditivos: novosAds, dataEncerramento: novaEnc, valorMensal: novoVM};
+                                      const toN2 = (d: string) => { const p=d?.split('/'); return p?.length===3?parseInt(p[2])*10000+parseInt(p[1])*100+parseInt(p[0]):0; };
+                                      const encRecalcNew = novosAds.filter(a => a.tipos?.includes("Prazo") && a.dataEncerramento).reduce((best, a) => toN2(a.dataEncerramento)>toN2(best)?a.dataEncerramento:best, "");
+                                      const novaEnc = encRecalcNew || c.dataEncerramentoOriginal || c.dataEncerramento;
+                                      const vmRecalcNew = novosAds.filter(a => (a.tipos?.includes("Acréscimo")||a.tipos?.includes("Redução")) && a.novoValorMensal).slice(-1)[0]?.novoValorMensal ?? null;
+                                      const novoVM = vmRecalcNew ?? c.valorMensalOriginal ?? c.valorMensal;
+                                      return {
+                                        ...c,
+                                        dataEncerramentoOriginal: c.dataEncerramentoOriginal ?? c.dataEncerramento,
+                                        valorMensalOriginal: c.valorMensalOriginal ?? c.valorMensal,
+                                        aditivos: novosAds,
+                                        dataEncerramento: novaEnc,
+                                        valorMensal: novoVM
+                                      };
                                     })}));
                                   }
                                   setShowAditivoModal(false); setAditivoParaContratoId(null); setEditAditivoId(null); setAditivoForm(emptyAditivoForm()); setAditivoErroValor(null);
                                 }} className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700">{editAditivoId ? "Salvar Aditivo" : "Adicionar Aditivo"}</Button>
-                              </div>
                             </div>
+                            {/* fim rodapé */}
                           </div>
                         </div>
+                      )}
+                      {contratoSearch.trim() && (selSecretaria.contratos ?? []).filter(ct => {
+                        const q = contratoSearch.trim().toLowerCase();
+                        return (ct.numero??'').toLowerCase().includes(q) || (ct.objeto??'').toLowerCase().includes(q) || (ct.numeroLicitacao??'').toLowerCase().includes(q) || (ct.dataInicial??'').includes(q) || (ct.dataEncerramento??'').includes(q);
+                      }).length === 0 && (
+                        <p className={`text-center py-6 text-sm ${isDarkMode ? "text-gray-500" : "text-gray-400"}`}>Nenhum contrato encontrado para "{contratoSearch}".</p>
                       )}
                     </div>
                     );
@@ -1202,13 +1569,29 @@ export default function App() {
                   {/* Sistemas */}
                   {adminDataTab === "sistemas" && (
                     <div className="space-y-4">
-                      <div className="flex justify-end mb-2">
-                        <Button onClick={() => { setNovoSistemaForm({ nome: "", status: "Ativo", dataInicio: "" }); setShowAddModal("sistema"); }} className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700">+ Adicionar</Button>
+                      <div className="flex flex-col sm:flex-row gap-3 mb-2">
+                        <input
+                          type="text"
+                          value={sistemaSearch}
+                          onChange={e => setSistemaSearch(e.target.value)}
+                          placeholder="Pesquisar por nome, status, data de início..."
+                          className={`flex-1 px-4 py-2 rounded-xl border text-sm ${isDarkMode ? "bg-slate-800 border-purple-500/30 text-white placeholder-gray-500" : "bg-white border-gray-300 text-slate-900 placeholder-gray-400"}`}
+                        />
+                        <Button onClick={() => { setNovoSistemaForm({ nome: "", status: "Ativo", dataInicio: "" }); setShowAddModal("sistema"); }} className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 flex-shrink-0">+ Adicionar</Button>
                       </div>
                       {selSecretaria.sistemasContratados.length === 0 && (
                         <p className={`text-center py-10 ${isDarkMode ? "text-gray-500" : "text-gray-400"}`}>Nenhum sistema cadastrado.</p>
                       )}
-                      {selSecretaria.sistemasContratados.map((sis, i) => (
+                      {(() => {
+                        const q = sistemaSearch.trim().toLowerCase();
+                        return selSecretaria.sistemasContratados.filter(sis => {
+                          if (!q) return true;
+                          return (
+                            sis.nome.toLowerCase().includes(q) ||
+                            sis.status.toLowerCase().includes(q) ||
+                            (sis.dataInicio ?? "").includes(q)
+                          );
+                        }).map((sis, i) => (
                         <Card key={i} className={isDarkMode ? "bg-slate-900/50 border-purple-500/20" : "bg-white border-gray-200 shadow-md"}>
                           <CardContent className="p-5">
                             <div className="flex items-center justify-between gap-3">
@@ -1238,11 +1621,16 @@ export default function App() {
                             </div>
                           </CardContent>
                         </Card>
-                      ))}
+                        ));
+                      })()}
+                      {sistemaSearch.trim() && selSecretaria.sistemasContratados.filter(sis => {
+                        const q = sistemaSearch.trim().toLowerCase();
+                        return sis.nome.toLowerCase().includes(q) || sis.status.toLowerCase().includes(q) || (sis.dataInicio??'').includes(q);
+                      }).length === 0 && (
+                        <p className={`text-center py-6 text-sm ${isDarkMode ? "text-gray-500" : "text-gray-400"}`}>Nenhum sistema encontrado para "{sistemaSearch}".</p>
+                      )}
                     </div>
                   )}
-
-                  {/* Notas Fiscais */}
                   {adminDataTab === "nfs" && (
                     <div className="space-y-4">
                       <div className="flex flex-col sm:flex-row gap-3 mb-2">
@@ -1370,36 +1758,76 @@ export default function App() {
                   {/* Relatórios */}
                   {adminDataTab === "relatorios" && (
                     <div className="space-y-4">
-                      <div className="flex justify-end mb-2">
-                        <Button onClick={() => { setNovoRelatorioForm({ titulo: "", data: "", tipo: "", arquivo: "" }); setShowAddModal("relatorio"); }} className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700">+ Adicionar</Button>
+                      <div className="flex flex-col sm:flex-row gap-3 mb-2">
+                        <input
+                          type="text"
+                          value={relatorioSearch}
+                          onChange={e => setRelatorioSearch(e.target.value)}
+                          placeholder="Pesquisar por título, tipo, referência, data..."
+                          className={`flex-1 px-4 py-2 rounded-xl border text-sm ${isDarkMode ? "bg-slate-800 border-purple-500/30 text-white placeholder-gray-500" : "bg-white border-gray-300 text-slate-900 placeholder-gray-400"}`}
+                        />
+                        <Button onClick={() => { setNovoRelatorioForm({ titulo: "", data: "", tipo: "", arquivo: "", referencia: "" }); setEditRelatorioIndex(null); setShowAddModal("relatorio"); }} className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 flex-shrink-0">+ Adicionar</Button>
                       </div>
                       {selSecretaria.relatorios.length === 0 && (
                         <p className={`text-center py-10 ${isDarkMode ? "text-gray-500" : "text-gray-400"}`}>Nenhum relatório cadastrado.</p>
                       )}
-                      {selSecretaria.relatorios.map((rel, i) => (
-                        <Card key={i} className={isDarkMode ? "bg-slate-900/50 border-purple-500/20" : "bg-white border-gray-200 shadow-md"}>
-                          <CardContent className="p-5">
-                            <div className="flex items-center justify-between gap-3">
-                              <div className="flex-1 min-w-0">
-                                <span className={`font-bold ${isDarkMode ? "text-white" : "text-slate-900"}`}>{rel.titulo || "—"}</span>
-                                <p className={`text-xs mt-1 ${isDarkMode ? "text-gray-400" : "text-gray-500"}`}>
-                                  {rel.tipo && <span>{rel.tipo}</span>}
-                                  {rel.data && <span> · {rel.data}</span>}
-                                </p>
-                              </div>
-                              <div className="flex gap-1 flex-shrink-0">
-                                {rel.arquivo && (
-                                  <a href={rel.arquivo} download={`Relatorio-${i+1}.pdf`} className={`p-2 rounded-lg transition ${isDarkMode ? "text-purple-400 hover:bg-purple-500/10" : "text-purple-600 hover:bg-purple-50"}`} title="Baixar PDF">
-                                    <Download className="w-4 h-4" />
-                                  </a>
-                                )}
-                                <button title="Excluir" onClick={() => setConfirmDelete({ label: rel.titulo, onConfirm: () => updSec(s => ({...s, relatorios: s.relatorios.filter((_, idx) => idx !== i)})) })}
-                                  className={`p-2 rounded-lg transition ${isDarkMode ? "text-red-400 hover:bg-red-500/10" : "text-red-500 hover:bg-red-50"}`}><span className="text-base">🗑</span></button>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
+                      {(() => {
+                        const q = relatorioSearch.trim().toLowerCase();
+                        return selSecretaria.relatorios.filter(rel => {
+                          if (!q) return true;
+                          return (
+                            rel.titulo.toLowerCase().includes(q) ||
+                            rel.tipo.toLowerCase().includes(q) ||
+                            rel.data.toLowerCase().includes(q) ||
+                            ((rel as any).referencia ?? "").toLowerCase().includes(q)
+                          );
+                        }).map((rel, _i) => {
+                          const origIndex = selSecretaria.relatorios.indexOf(rel);
+                          return (
+                            <Card key={origIndex} className={isDarkMode ? "bg-slate-900/50 border-purple-500/20" : "bg-white border-gray-200 shadow-md"}>
+                              <CardContent className="p-5">
+                                <div className="flex items-start justify-between gap-3">
+                                  <div className="flex-1 min-w-0">
+                                    <span className={`font-bold text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>
+                                      {rel.titulo || "—"}{(rel as any).referencia ? ` - ${((rel as any).referencia as string).toUpperCase()}` : ""}
+                                    </span>
+                                    <div className={`flex gap-x-6 mt-1 text-xs ${isDarkMode ? "text-gray-400" : "text-gray-500"}`}>
+                                      {rel.tipo && <p><span className={`font-medium ${isDarkMode ? "text-gray-300" : "text-slate-600"}`}>Sistema:</span> {rel.tipo}</p>}
+                                      {rel.data && <p><span className={`font-medium ${isDarkMode ? "text-gray-300" : "text-slate-600"}`}>Data:</span> {rel.data}</p>}
+                                    </div>
+                                  </div>
+                                  <div className="flex gap-1 flex-shrink-0 items-center">
+                                    {rel.arquivo ? (
+                                      <a href={rel.arquivo} download={`Relatorio-${origIndex+1}.pdf`} className={`p-2 rounded-lg transition ${isDarkMode ? "text-purple-400 hover:bg-purple-500/10" : "text-purple-600 hover:bg-purple-50"}`} title="Baixar PDF">
+                                        <Download className="w-4 h-4" />
+                                      </a>
+                                    ) : (
+                                      <span className={`p-2 rounded-lg inline-flex items-center justify-center ${isDarkMode ? "text-gray-600" : "text-gray-300"}`} title="Sem PDF">
+                                        <Download className="w-4 h-4" />
+                                      </span>
+                                    )}
+                                    <button title="Editar" onClick={() => {
+                                      setEditRelatorioIndex(origIndex);
+                                      setNovoRelatorioForm({ titulo: rel.titulo, data: rel.data, tipo: rel.tipo, arquivo: rel.arquivo ?? "", referencia: (rel as any).referencia ?? "" });
+                                      setShowAddModal("relatorio");
+                                    }} className={`p-2 rounded-lg transition ${isDarkMode ? "text-blue-400 hover:bg-blue-500/10" : "text-blue-500 hover:bg-blue-50"}`}>
+                                      <Pencil className="w-4 h-4" />
+                                    </button>
+                                    <button title="Excluir" onClick={() => setConfirmDelete({ label: rel.titulo, onConfirm: () => updSec(s => ({...s, relatorios: s.relatorios.filter((_, idx) => idx !== origIndex)})) })}
+                                      className={`p-2 rounded-lg transition ${isDarkMode ? "text-red-400 hover:bg-red-500/10" : "text-red-500 hover:bg-red-50"}`}><span className="text-base">🗑</span></button>
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          );
+                        });
+                      })()}
+                      {relatorioSearch.trim() && selSecretaria.relatorios.filter(rel => {
+                        const q = relatorioSearch.trim().toLowerCase();
+                        return rel.titulo.toLowerCase().includes(q) || rel.tipo.toLowerCase().includes(q) || rel.data.toLowerCase().includes(q) || ((rel as any).referencia??'').toLowerCase().includes(q);
+                      }).length === 0 && (
+                        <p className={`text-center py-6 text-sm ${isDarkMode ? "text-gray-500" : "text-gray-400"}`}>Nenhum relatório encontrado para "{relatorioSearch}".</p>
+                      )}
                     </div>
                   )}
                 </div>
@@ -1408,29 +1836,52 @@ export default function App() {
               {/* ── ABA USUÁRIOS ── */}
               {adminClientSubSection === "usuarios" && (
                 <div>
-                  <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center justify-between mb-4">
                     <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-400">Usuários do Portal</h1>
                     <div className="flex gap-3">
-                      <Button onClick={() => { setNovoUserForm({ nome: "", login: "", senha: "", entidadeId: "", secretariaId: "" }); setShowAddModal("usuario"); }} className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700">+ Adicionar</Button>
+                      <Button onClick={() => { setNovoUserForm({ nome: "", login: "", senha: "", entidadeId: "", secretariaId: "", cargo: "", telefone: "", foto: "" }); setShowAddModal("usuario"); }} className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700">+ Adicionar</Button>
                       <Button onClick={saveTodo} className={savedFeedback ? "bg-green-600 hover:bg-green-700" : "bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"}>
                         <CheckCircle2 className="w-4 h-4 mr-2" />{savedFeedback ? "Salvo!" : "Salvar"}
                       </Button>
                     </div>
                   </div>
+                  <div className="mb-4">
+                    <input
+                      type="text"
+                      value={usuarioSearch}
+                      onChange={e => setUsuarioSearch(e.target.value)}
+                      placeholder="Pesquisar por nome, e-mail, entidade, secretaria..."
+                      className={`w-full px-4 py-2 rounded-xl border text-sm ${isDarkMode ? "bg-slate-800 border-purple-500/30 text-white placeholder-gray-500" : "bg-white border-gray-300 text-slate-900 placeholder-gray-400"}`}
+                    />
+                  </div>
 
                   {/* Lista de usuários */}
                   <div className="space-y-3">
                     {clientUsers.length === 0 && <p className={`text-center py-12 ${isDarkMode ? "text-gray-500" : "text-gray-400"}`}>Nenhum usuário cadastrado ainda.</p>}
-                    {clientUsers.map(user => {
+                    {clientUsers.filter(user => {
+                      const q = usuarioSearch.trim().toLowerCase();
+                      if (!q) return true;
+                      const ent = entidades.find(e => e.id === user.entidadeId);
+                      const sec = ent?.secretarias.find(s => s.id === user.secretariaId);
+                      return (
+                        user.nome.toLowerCase().includes(q) ||
+                        user.login.toLowerCase().includes(q) ||
+                        (ent?.nome ?? "").toLowerCase().includes(q) ||
+                        (sec?.nome ?? "").toLowerCase().includes(q)
+                      );
+                    }).map(user => {
                       const ent = entidades.find(e => e.id === user.entidadeId);
                       const sec = ent?.secretarias.find(s => s.id === user.secretariaId);
                       return (
                         <Card key={user.id} className={isDarkMode ? "bg-slate-900/50 border-purple-500/20" : "bg-white border-gray-200 shadow-sm"}>
                           <CardContent className="p-4 flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                              <div className={`p-2 rounded-lg ${isDarkMode ? "bg-cyan-500/10" : "bg-cyan-50"}`}><Users className="w-5 h-5 text-cyan-500" /></div>
+                              <div className={`w-10 h-10 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center ${isDarkMode ? "bg-cyan-500/10" : "bg-cyan-50"}`}>
+                                {user.foto ? <img src={user.foto} alt={user.nome} className="w-full h-full object-cover" /> : <Users className="w-5 h-5 text-cyan-500" />}
+                              </div>
                               <div>
                                 <p className={`font-semibold ${isDarkMode ? "text-white" : "text-slate-900"}`}>{user.nome}</p>
+                                {user.cargo && <p className={`text-xs font-medium ${isDarkMode ? "text-cyan-400" : "text-cyan-600"}`}>{user.cargo}</p>}
                                 <p className={`text-xs ${isDarkMode ? "text-gray-400" : "text-gray-500"}`}>{user.login}</p>
                                 <p className={`text-xs mt-0.5 ${isDarkMode ? "text-purple-400" : "text-purple-600"}`}>{ent?.nome ?? "—"} / {sec?.nome ?? "—"}</p>
                               </div>
@@ -1443,6 +1894,14 @@ export default function App() {
                         </Card>
                       );
                     })}
+                    {usuarioSearch.trim() && clientUsers.filter(user => {
+                      const q = usuarioSearch.trim().toLowerCase();
+                      const ent = entidades.find(e => e.id === user.entidadeId);
+                      const sec = ent?.secretarias.find(s => s.id === user.secretariaId);
+                      return user.nome.toLowerCase().includes(q) || user.login.toLowerCase().includes(q) || (ent?.nome??'').toLowerCase().includes(q) || (sec?.nome??'').toLowerCase().includes(q);
+                    }).length === 0 && (
+                      <p className={`text-center py-6 text-sm ${isDarkMode ? "text-gray-500" : "text-gray-400"}`}>Nenhum usuário encontrado para "{usuarioSearch}".</p>
+                    )}
                   </div>
                 </div>
               )}
@@ -1711,20 +2170,90 @@ export default function App() {
               {/* Modal: Novo Relatório */}
               {showAddModal === "relatorio" && (
                 <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4" style={{backdropFilter:"blur(4px)",background:"rgba(0,0,0,0.6)"}}
-                  onClick={() => setShowAddModal(null)}>
+                  onClick={() => { setShowAddModal(null); setEditRelatorioIndex(null); }}>
                   <div className={`w-full max-w-lg rounded-2xl shadow-2xl ${isDarkMode ? "bg-slate-900 border border-purple-500/30" : "bg-white border border-gray-200"}`}
                     onClick={e => e.stopPropagation()}>
                     <div className="p-6">
-                      <h2 className={`text-lg font-bold mb-5 ${isDarkMode ? "text-white" : "text-slate-900"}`}>Novo Relatório</h2>
+                      <h2 className={`text-lg font-bold mb-5 ${isDarkMode ? "text-white" : "text-slate-900"}`}>{editRelatorioIndex !== null ? "Editar Relatório" : "Novo Relatório"}</h2>
                       <div className="grid md:grid-cols-2 gap-4 mb-4">
                         <div className="md:col-span-2"><label className={labelClass}>Título</label><input type="text" value={novoRelatorioForm.titulo} onChange={e => setNovoRelatorioForm(p => ({...p, titulo: e.target.value}))} className={inputClass} placeholder="Ex: Relatório de Uso - Janeiro 2026" autoFocus /></div>
-                        <div><label className={labelClass}>Tipo</label><input type="text" value={novoRelatorioForm.tipo} onChange={e => setNovoRelatorioForm(p => ({...p, tipo: e.target.value}))} className={inputClass} placeholder="Ex: Suporte" /></div>
+                        <div className="relative">
+                          <label className={labelClass}>Sistema</label>
+                          <input type="text" value={novoRelatorioForm.tipo}
+                            onChange={e => {
+                              const v = e.target.value;
+                              setNovoRelatorioForm(p => ({...p, tipo: v}));
+                              if (v.trim()) setSisSugestoes(selSecretaria.sistemasContratados.map((s: any) => s.nome).filter((n: string) => n.toLowerCase().includes(v.toLowerCase())));
+                              else setSisSugestoes(selSecretaria.sistemasContratados.map((s: any) => s.nome));
+                            }}
+                            onFocus={() => {
+                              setSisSugestoes(selSecretaria.sistemasContratados.map((s: any) => s.nome));
+                            }}
+                            onBlur={() => setTimeout(() => setSisSugestoes([]), 150)}
+                            className={inputClass} placeholder="Digite para buscar sistema..." />
+                          {sisSugestoes.length > 0 && (
+                            <ul className={`absolute z-50 w-full mt-1 rounded-xl shadow-lg border overflow-hidden ${isDarkMode ? "bg-slate-800 border-purple-500/30" : "bg-white border-gray-200"}`}>
+                              {sisSugestoes.map((s: string) => (
+                                <li key={s} onMouseDown={() => { setNovoRelatorioForm(p => ({...p, tipo: s})); setSisSugestoes([]); }}
+                                  className={`px-4 py-2 text-sm cursor-pointer ${isDarkMode ? "text-white hover:bg-purple-600/30" : "text-slate-800 hover:bg-purple-50"}`}>{s}</li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
                         <div><label className={labelClass}>Data</label><input type="text" value={novoRelatorioForm.data} onChange={e => setNovoRelatorioForm(p => ({...p, data: maskDate(e.target.value)}))} className={inputClass} placeholder="DD/MM/AAAA" maxLength={10} /></div>
+                        <div className="md:col-span-2 relative">
+                          <label className={labelClass}>Referência do Mês</label>
+                          <input type="text" value={novoRelatorioForm.referencia}
+                            onChange={e => {
+                              const v = e.target.value;
+                              setNovoRelatorioForm(p => ({...p, referencia: v}));
+                              if (v.trim()) setRelSugestoes(MESES.filter(m => m.toLowerCase().startsWith(v.toLowerCase())));
+                              else setRelSugestoes([]);
+                            }}
+                            onBlur={() => setTimeout(() => setRelSugestoes([]), 150)}
+                            className={inputClass} placeholder="Ex: Janeiro" />
+                          {relSugestoes.length > 0 && (
+                            <ul className={`absolute z-50 w-full mt-1 rounded-xl shadow-lg border overflow-hidden ${isDarkMode ? "bg-slate-800 border-purple-500/30" : "bg-white border-gray-200"}`}>
+                              {relSugestoes.map(m => (
+                                <li key={m} onMouseDown={() => { setNovoRelatorioForm(p => ({...p, referencia: m})); setRelSugestoes([]); }}
+                                  className={`px-4 py-2 text-sm cursor-pointer ${isDarkMode ? "text-white hover:bg-purple-600/30" : "text-slate-800 hover:bg-purple-50"}`}>{m}</li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
                       </div>
-                      <div className="mb-4"><label className={labelClass}>PDF (opcional)</label><input type="file" accept=".pdf" className={fileInputClass} onChange={async e => { const f = e.target.files?.[0]; if (f) { const b64 = await readFileAsBase64(f); setNovoRelatorioForm(p => ({...p, arquivo: b64})); } }} />{novoRelatorioForm.arquivo && <p className="text-green-400 text-xs mt-1">✓ PDF carregado</p>}</div>
+                      <div className="mb-4">
+                        <label className={labelClass}>PDF (opcional)</label>
+                        {novoRelatorioForm.arquivo ? (
+                          <div className={`flex items-center gap-3 p-3 rounded-xl border ${isDarkMode ? "bg-green-900/20 border-green-500/30" : "bg-green-50 border-green-200"}`}>
+                            <span className="text-green-400 text-sm font-medium flex-1">✓ PDF carregado</span>
+                            <label className={`cursor-pointer text-xs px-3 py-1 rounded-lg ${isDarkMode ? "bg-slate-700 text-gray-300 hover:bg-slate-600" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}>
+                              Substituir
+                              <input type="file" accept=".pdf" className="hidden" onChange={async e => { const f = e.target.files?.[0]; if (f) { const b64 = await readFileAsBase64(f); setNovoRelatorioForm(p => ({...p, arquivo: b64})); } }} />
+                            </label>
+                            <button type="button" onClick={() => setNovoRelatorioForm(p => ({...p, arquivo: ""}))} className="text-xs px-3 py-1 rounded-lg bg-red-600 text-white hover:bg-red-700">Remover</button>
+                          </div>
+                        ) : (
+                          <label className={`flex items-center gap-3 cursor-pointer p-3 rounded-xl border border-dashed ${isDarkMode ? "border-purple-500/30 hover:border-purple-400/50" : "border-gray-300 hover:border-purple-400"} transition`}>
+                            <span className={`text-xs px-3 py-1.5 rounded-lg font-medium ${isDarkMode ? "bg-purple-600 text-white" : "bg-purple-600 text-white"}`}>Escolher arquivo</span>
+                            <span className={`text-sm ${isDarkMode ? "text-gray-400" : "text-gray-500"}`}>Nenhum arquivo escolhido</span>
+                            <input type="file" accept=".pdf" className="hidden" onChange={async e => { const f = e.target.files?.[0]; if (f) { const b64 = await readFileAsBase64(f); setNovoRelatorioForm(p => ({...p, arquivo: b64})); } }} />
+                          </label>
+                        )}
+                      </div>
                       <div className="flex justify-end gap-3">
-                        <Button variant="outline" onClick={() => setShowAddModal(null)} className={isDarkMode ? "border-gray-500 text-black" : "border-gray-400 text-black"}>Cancelar</Button>
-                        <Button onClick={() => { if (!novoRelatorioForm.titulo.trim()) return; updSec(s => ({...s, relatorios: [...s.relatorios, {...novoRelatorioForm}]})); setNovoRelatorioForm({ titulo: "", data: "", tipo: "", arquivo: "" }); setShowAddModal(null); }} className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700">Adicionar</Button>
+                        <Button variant="outline" onClick={() => { setShowAddModal(null); setEditRelatorioIndex(null); }} className={isDarkMode ? "border-gray-500 text-black" : "border-gray-400 text-black"}>Cancelar</Button>
+                        <Button onClick={() => {
+                          if (!novoRelatorioForm.titulo.trim()) return;
+                          if (editRelatorioIndex !== null) {
+                            updSec(s => ({ ...s, relatorios: s.relatorios.map((r, idx) => idx === editRelatorioIndex ? { ...novoRelatorioForm } : r) }));
+                            setEditRelatorioIndex(null);
+                          } else {
+                            updSec(s => ({...s, relatorios: [...s.relatorios, {...novoRelatorioForm}]}));
+                          }
+                          setNovoRelatorioForm({ titulo: "", data: "", tipo: "", arquivo: "", referencia: "" });
+                          setShowAddModal(null);
+                        }} className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700">{editRelatorioIndex !== null ? "Salvar Relatório" : "Adicionar"}</Button>
                       </div>
                     </div>
                   </div>
@@ -1746,15 +2275,92 @@ export default function App() {
                           : (fn: (p: typeof novoUserForm) => typeof novoUserForm) => setNovoUserForm(fn);
                         return (
                           <div className="space-y-4">
+                            {/* Avatar / Foto */}
+                            <div className="flex flex-col items-center gap-2 pb-2">
+                              <div className={`relative w-20 h-20 rounded-full border-2 overflow-hidden flex items-center justify-center ${isDarkMode ? "border-purple-500/50 bg-slate-800" : "border-purple-300 bg-gray-100"}`}>
+                                {form.foto ? (
+                                  <img src={form.foto} alt="foto" className="w-full h-full object-cover" />
+                                ) : (
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
+                                )}
+                                <label className="absolute inset-0 flex items-end justify-center cursor-pointer">
+                                  <span className={`w-full text-center text-[10px] py-1 font-medium ${isDarkMode ? "bg-slate-900/80 text-purple-300" : "bg-white/80 text-purple-600"}`}>alterar</span>
+                                  <input type="file" accept="image/*" className="hidden" onChange={e => {
+                                    const file = e.target.files?.[0];
+                                    if (!file) return;
+                                    const reader = new FileReader();
+                                    reader.onload = ev => setForm(p => ({...p, foto: ev.target?.result as string ?? ""}));
+                                    reader.readAsDataURL(file);
+                                    e.target.value = "";
+                                  }} />
+                                </label>
+                              </div>
+                              {form.foto && (
+                                <button type="button" onClick={() => setForm(p => ({...p, foto: ""}))} className={`text-xs ${isDarkMode ? "text-red-400 hover:text-red-300" : "text-red-500 hover:text-red-600"}`}>Remover foto</button>
+                              )}
+                            </div>
                             <div className="grid md:grid-cols-2 gap-4">
                               <div><label className={labelClass}>Nome</label><input type="text" value={form.nome} onChange={e => setForm(p => ({...p, nome: e.target.value}))} className={inputClass} placeholder="Nome completo" autoFocus /></div>
                               <div><label className={labelClass}>Login (e-mail)</label><input type="email" value={form.login} onChange={e => setForm(p => ({...p, login: e.target.value}))} className={inputClass} placeholder="usuario@exemplo.gov.br" /></div>
                               <div><label className={labelClass}>Senha</label><input type="password" value={form.senha} onChange={e => setForm(p => ({...p, senha: e.target.value}))} className={inputClass} placeholder="••••••••" /></div>
-                              <div><label className={labelClass}>Entidade</label>
-                                <select value={form.entidadeId} onChange={e => setForm(p => ({...p, entidadeId: e.target.value, secretariaId: ""}))} className={inputClass}>
-                                  <option value="">Selecione a entidade</option>
-                                  {entidades.map(ent => <option key={ent.id} value={ent.id}>{ent.nome}</option>)}
-                                </select>
+                              <div><label className={labelClass}>Cargo</label><input type="text" value={form.cargo ?? ""} onChange={e => setForm(p => ({...p, cargo: e.target.value}))} className={inputClass} placeholder="Ex: Analista, Secretário(a)..." /></div>
+                              <div><label className={labelClass}>Telefone</label><input type="tel" value={form.telefone ?? ""} onChange={e => setForm(p => ({...p, telefone: e.target.value}))} className={inputClass} placeholder="(00) 00000-0000" /></div>
+                              <div className="md:col-span-2"><label className={labelClass}>Entidade</label>
+                                <div className="relative">
+                                  {(() => {
+                                    if (adminSelEntidadeId && form.entidadeId === adminSelEntidadeId) {
+                                      return (
+                                        <div className={`${inputClass} flex items-center gap-2 cursor-not-allowed opacity-80`}>
+                                          <span className="flex-1 truncate whitespace-nowrap overflow-hidden">{entidades.find(e => e.id === form.entidadeId)?.nome ?? "—"}</span>
+                                          <span className={`flex-shrink-0 text-xs px-2 py-0.5 rounded-full ${isDarkMode ? "bg-slate-700 text-gray-400" : "bg-gray-100 text-gray-400"}`}>fixo</span>
+                                        </div>
+                                      );
+                                    }
+                                    const entSugs = entidadeSearch.trim().length > 0
+                                      ? entidades.filter(e => e.nome.toLowerCase().includes(entidadeSearch.toLowerCase()))
+                                      : entidades;
+                                    const entSelecionada = entidades.find(e => e.id === form.entidadeId);
+                                    const pickEnt = (ent: typeof entidades[0]) => {
+                                      setForm(p => ({...p, entidadeId: ent.id, secretariaId: ""}));
+                                      setEntidadeSearch(ent.nome);
+                                      setShowEntidadeDropdown(false);
+                                      setEntidadeHighlight(0);
+                                    };
+                                    return (
+                                      <>
+                                        <input
+                                          type="text"
+                                          value={entidadeSearch || (entSelecionada ? entSelecionada.nome : "")}
+                                          onChange={e => { setEntidadeSearch(e.target.value); setShowEntidadeDropdown(true); setEntidadeHighlight(0); if (!e.target.value) setForm(p => ({...p, entidadeId: "", secretariaId: ""})); }}
+                                          onFocus={() => { setShowEntidadeDropdown(true); }}
+                                          onBlur={() => setTimeout(() => setShowEntidadeDropdown(false), 150)}
+                                          onKeyDown={e => {
+                                            if (!showEntidadeDropdown || entSugs.length === 0) return;
+                                            if (e.key === "ArrowDown") { e.preventDefault(); setEntidadeHighlight(h => Math.min(h+1, entSugs.length-1)); }
+                                            else if (e.key === "ArrowUp") { e.preventDefault(); setEntidadeHighlight(h => Math.max(h-1, 0)); }
+                                            else if (e.key === "Enter") { e.preventDefault(); pickEnt(entSugs[entidadeHighlight]); }
+                                            else if (e.key === "Escape") { setShowEntidadeDropdown(false); }
+                                          }}
+                                          className={inputClass}
+                                          placeholder="Digite para buscar entidade..."
+                                          autoComplete="off"
+                                        />
+                                        {showEntidadeDropdown && entSugs.length > 0 && (
+                                          <ul className={`absolute z-[10000] left-0 right-0 mt-1 rounded-lg shadow-xl overflow-hidden border ${isDarkMode ? "bg-slate-800 border-purple-500/30" : "bg-white border-gray-200"}`}>
+                                            {entSugs.map((ent, idx) => (
+                                              <li key={ent.id} onMouseDown={() => pickEnt(ent)} onMouseEnter={() => setEntidadeHighlight(idx)}
+                                                className={`px-3 py-2 text-sm cursor-pointer transition-colors ${
+                                                  idx === entidadeHighlight
+                                                    ? "bg-purple-600 text-white"
+                                                    : isDarkMode ? "text-gray-200 hover:bg-slate-700" : "text-slate-800 hover:bg-purple-50"
+                                                }`}>{ent.nome}</li>
+                                            ))}
+                                          </ul>
+                                        )}
+                                      </>
+                                    );
+                                  })()}
+                                </div>
                               </div>
                               <div className="md:col-span-2"><label className={labelClass}>Secretaria</label>
                                 <select value={form.secretariaId} onChange={e => setForm(p => ({...p, secretariaId: e.target.value}))} className={inputClass} disabled={!form.entidadeId}>
@@ -1774,7 +2380,7 @@ export default function App() {
                                   if (!novoUserForm.nome || !novoUserForm.login || !novoUserForm.senha || !novoUserForm.entidadeId || !novoUserForm.secretariaId) return;
                                   const id = `usr_${Date.now()}`;
                                   setClientUsers(prev => [...prev, { id, ...novoUserForm }]);
-                                  setNovoUserForm({ nome: "", login: "", senha: "", entidadeId: "", secretariaId: "" });
+                                  setNovoUserForm({ nome: "", login: "", senha: "", entidadeId: "", secretariaId: "", cargo: "", telefone: "", foto: "" });
                                 }
                                 setShowAddModal(null);
                               }} className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700">
@@ -3412,22 +4018,13 @@ export default function App() {
               <img src={isDarkMode ? logoJeosBranca : logoJeosColorida} alt="JEOS Sistemas e Governo" className="h-12 w-auto" />
             </div>
             <div className="flex items-center gap-4">
-              <Button variant="outline" size="sm" onClick={() => setIsDarkMode(!isDarkMode)}
-                className={isDarkMode ? "border-purple-500/50 text-purple-400 hover:bg-purple-500/10" : "border-purple-500 text-purple-600 hover:bg-purple-50"}>
-                {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-              </Button>
               <div className="flex items-center gap-3">
-                <ImageWithFallback src={loggedSec?.foto ?? ""} alt={(loggedSec?.responsavel ?? loggedInUser?.nome ?? "")} className="w-10 h-10 rounded-full object-cover border-2 border-purple-500" />
+                <ImageWithFallback src={loggedInUser?.foto ?? loggedSec?.foto ?? ""} alt={loggedInUser?.nome ?? ""} className="w-10 h-10 rounded-full object-cover border-2 border-purple-500" />
                 <div className="hidden md:block">
-                  <p className={isDarkMode ? "text-white text-sm font-semibold" : "text-slate-900 text-sm font-semibold"}>{(loggedSec?.responsavel ?? loggedInUser?.nome ?? "")}</p>
+                  <p className={isDarkMode ? "text-white text-sm font-semibold" : "text-slate-900 text-sm font-semibold"}>{loggedInUser?.nome ?? ""}</p>
                   <p className={isDarkMode ? "text-gray-400 text-xs" : "text-gray-600 text-xs"}>{(loggedEnt?.nome ?? "")}</p>
                 </div>
               </div>
-              <Button variant="outline" size="sm" onClick={handleLogout}
-                className={isDarkMode ? "border-red-500/50 text-red-400 hover:bg-red-500/10" : "border-red-500 text-red-600 hover:bg-red-50"}>
-                <LogOut className="w-4 h-4 mr-2" />
-                Sair
-              </Button>
             </div>
           </div>
         </header>
@@ -3440,23 +4037,24 @@ export default function App() {
             <div className="fixed inset-0 bg-black/50 z-30 md:hidden" onClick={() => setClienteSidebarOpen(false)} />
           )}
           {/* Sidebar */}
-          <aside className={`fixed top-0 left-0 h-full w-64 z-40 flex flex-col p-4 transition-transform duration-300
-            md:sticky md:top-0 md:translate-x-0 md:z-auto md:h-screen md:self-start
+          <aside className={`fixed top-[73px] left-0 h-[calc(100vh-73px)] w-64 z-40 flex flex-col transition-transform duration-300
+            md:sticky md:top-[73px] md:translate-x-0 md:z-auto md:h-[calc(100vh-73px)] md:self-start md:max-h-[calc(100vh-73px)]
             ${clienteSidebarOpen ? "translate-x-0" : "-translate-x-full"}
             ${isDarkMode ? "bg-slate-900 border-r border-purple-500/20" : "bg-white border-r border-gray-200 shadow-sm"}
           `}>
-            <div className="flex items-center justify-between mb-4">
-              <p className={isDarkMode ? "text-gray-400 text-xs uppercase tracking-wider px-4" : "text-gray-500 text-xs uppercase tracking-wider px-4"}>
+            <div className="flex items-center justify-between p-4 pb-2 flex-shrink-0">
+              <p className={isDarkMode ? "text-gray-400 text-xs uppercase tracking-wider" : "text-gray-500 text-xs uppercase tracking-wider"}>
                 Portal do Cliente
               </p>
               <button onClick={() => setClienteSidebarOpen(false)} className={`md:hidden p-1.5 rounded-lg ${isDarkMode ? "text-gray-400 hover:bg-slate-800" : "text-gray-500 hover:bg-gray-100"}`}>
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <nav className="space-y-1">
+            <nav className="px-3 space-y-0.5 flex-shrink-0">
               {([
                 { id: null as string | null, label: "Dashboard", icon: TrendingUp },
                 { id: 'contract' as string | null, label: "Meu Contrato", icon: FileText },
+                { id: 'systems' as string | null, label: "Sistemas", icon: Package },
                 { id: 'invoices' as string | null, label: "Notas Fiscais", icon: DollarSign },
                 { id: 'reports' as string | null, label: "Relatórios", icon: Eye },
                 { id: 'settings' as string | null, label: "Configurações", icon: Users },
@@ -3465,7 +4063,7 @@ export default function App() {
                 const isActive = currentModal === item.id;
                 return (
                   <button key={String(item.id)} onClick={() => { setCurrentModal(item.id); setClienteSidebarOpen(false); }}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all text-left ${
+                    className={`w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-all text-left ${
                       isActive
                         ? isDarkMode
                           ? "bg-gradient-to-r from-purple-600/30 to-cyan-600/20 text-white border border-purple-500/30"
@@ -3481,6 +4079,22 @@ export default function App() {
                 );
               })}
             </nav>
+            {/* Rodapé do sidebar */}
+            <div className={`mt-auto px-3 pb-3 pt-2 border-t flex-shrink-0 ${isDarkMode ? "border-purple-500/20" : "border-gray-200"}`}>
+              <button onClick={() => setIsDarkMode(!isDarkMode)}
+                className={`w-full flex items-center gap-3 px-4 py-2 rounded-lg text-sm font-medium transition ${
+                  isDarkMode ? "text-gray-400 hover:bg-slate-800 hover:text-white" : "text-gray-600 hover:bg-gray-100 hover:text-slate-900"
+                }`}>
+                {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                {isDarkMode ? "Modo Claro" : "Modo Escuro"}
+              </button>
+              <button onClick={handleLogout}
+                className={`w-full flex items-center gap-3 px-4 py-2 rounded-lg text-sm font-medium transition ${
+                  isDarkMode ? "text-red-400 hover:bg-red-500/10" : "text-red-600 hover:bg-red-50"
+                }`}>
+                <LogOut className="w-4 h-4" />Sair
+              </button>
+            </div>
           </aside>
 
           {/* Conteúdo Principal */}
@@ -3490,7 +4104,7 @@ export default function App() {
             {currentModal === null && (
               <div>
                 <h1 className={`text-3xl font-bold mb-2 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
-                  Bem-vindo, {(loggedSec?.responsavel ?? loggedInUser?.nome ?? "")}!
+                  Bem-vindo, {loggedInUser?.nome ?? ""}!
                 </h1>
                 <p className={`mb-8 ${isDarkMode ? "text-gray-400" : "text-gray-600"}`}>{(loggedEnt?.nome ?? "")}</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -3523,16 +4137,21 @@ export default function App() {
                         <Package className="w-5 h-5 text-purple-400" /> Sistemas Contratados
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-3">
-                      {(loggedSec?.sistemasContratados ?? []).map((s, i) => (
+                    <CardContent className="space-y-3 cursor-pointer" onClick={() => setCurrentModal('systems')}>
+                      {(loggedSec?.sistemasContratados ?? []).map((s, i) => {
+                        const sl = s.status?.toLowerCase();
+                        const badgeCls = sl === "ativo" ? "bg-green-500" : sl === "inativo" ? "bg-red-500" : sl === "suspenso" ? "bg-yellow-500" : "bg-gray-500";
+                        const iconCls = sl === "ativo" ? "text-green-400" : sl === "inativo" ? "text-red-400" : sl === "suspenso" ? "text-yellow-400" : "text-gray-400";
+                        return (
                         <div key={i} className={isDarkMode ? "flex justify-between items-center p-3 bg-slate-800 rounded-lg" : "flex justify-between items-center p-3 bg-gray-50 rounded-lg border border-gray-100"}>
                           <div className="flex items-center gap-3">
-                            <CheckCircle2 className="w-5 h-5 text-green-400" />
+                            <CheckCircle2 className={`w-5 h-5 ${iconCls}`} />
                             <span className={isDarkMode ? "text-gray-300" : "text-gray-700"}>{s.nome}</span>
                           </div>
-                          <Badge className="bg-green-500 text-white border-none">{s.status}</Badge>
+                          <Badge className={`${badgeCls} text-white border-none`}>{s.status}</Badge>
                         </div>
-                      ))}
+                        );
+                      })}
                     </CardContent>
                   </Card>
                   <Card className={isDarkMode ? "bg-slate-900/50 border-purple-500/20" : "bg-white border-gray-200 shadow-md"}>
@@ -3541,19 +4160,30 @@ export default function App() {
                         <FileText className="w-5 h-5 text-purple-400" /> Últimas Notas Fiscais
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-3">
-                      {(loggedSec?.notasFiscais ?? []).map((nf, i) => (
+                    <CardContent className="space-y-3 cursor-pointer" onClick={() => setCurrentModal('invoices')}>
+                      {(loggedSec?.notasFiscais ?? []).map((nf, i) => {
+                        const valorFmt = (() => { const n = parseFloat((nf.valor??"").replace(/[^\d.,]/g,"").replace(",",".")); return isNaN(n) ? (nf.valor||"—") : `R$ ${n.toLocaleString("pt-BR",{minimumFractionDigits:2})}`; })();
+                        const statusReal = nf.dataPagamento ? "Pago" : (() => {
+                          if (!nf.dataVencimento) return nf.status;
+                          const [d,m,a] = nf.dataVencimento.split("/");
+                          const dv = new Date(+a,+m-1,+d); dv.setHours(0,0,0,0);
+                          const hoje = new Date(); hoje.setHours(0,0,0,0);
+                          return dv < hoje ? "Vencida" : nf.status;
+                        })();
+                        const statusCls = (s: string) => { const sl=s?.toLowerCase(); if(sl==="pago"||sl==="paga") return "bg-green-500"; if(sl==="vencida"||sl==="vencido") return "bg-red-500"; if(sl==="pendente") return "bg-yellow-500"; return "bg-gray-500"; };
+                        return (
                         <div key={i} className={isDarkMode ? "flex justify-between items-center p-3 bg-slate-800 rounded-lg" : "flex justify-between items-center p-3 bg-gray-50 rounded-lg border border-gray-100"}>
                           <div>
                             <p className={isDarkMode ? "text-gray-300 font-medium" : "text-gray-700 font-medium"}>{nf.numero}</p>
                             <p className="text-gray-500 text-xs">{nf.data}</p>
                           </div>
                           <div className="text-right">
-                            <p className={isDarkMode ? "text-cyan-400 font-semibold" : "text-purple-600 font-semibold"}>{nf.valor}</p>
-                            <Badge className="bg-green-500 text-white border-none text-xs">{nf.status}</Badge>
+                            <p className={isDarkMode ? "text-cyan-400 font-semibold" : "text-purple-600 font-semibold"}>{valorFmt}</p>
+                            <Badge className={`${statusCls(statusReal)} text-white border-none text-xs`}>{statusReal}</Badge>
                           </div>
                         </div>
-                      ))}
+                        );
+                      })}
                     </CardContent>
                   </Card>
                 </div>
@@ -3565,145 +4195,507 @@ export default function App() {
               const pDate = (d: string) => { const [dd,mm,yyyy] = d.split("/"); return new Date(Number(yyyy), Number(mm)-1, Number(dd)); };
               const diasR = (enc: string) => { try { return Math.ceil((pDate(enc).getTime() - new Date().setHours(0,0,0,0)) / 86400000); } catch { return null; } };
               const vigTag = (enc: string) => { const d = diasR(enc); if (d === null) return null; if (d < 0) return <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-red-500/20 text-red-400">Encerrado</span>; if (d <= 90) return <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-yellow-500/20 text-yellow-400">{d}d restantes</span>; return <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-green-500/20 text-green-400">{d}d restantes</span>; };
+              const toDateNum2 = (d: string) => { const p = d?.split('/'); return p?.length===3 ? parseInt(p[2])*10000+parseInt(p[1])*100+parseInt(p[0]) : 0; };
+              const latestEnc2 = (ct: any) => (ct.aditivos??[]).filter((a: any) => a.tipos?.includes("Prazo") && a.dataEncerramento).reduce((best: string, a: any) => toDateNum2(a.dataEncerramento)>toDateNum2(best)?a.dataEncerramento:best, ct.dataEncerramento??"");
+              const mesesUsados2 = (ct: any) => { const enc = latestEnc2(ct); return (ct.dataInicial && enc) ? calcMesesDMY(ct.dataInicial, enc) : 0; };
+              const prazoTag = (ct: any) => {
+                if (!ct.artigo) return null;
+                const max = ARTIGO_MAX_MESES[ct.artigo] ?? 0;
+                const usado = mesesUsados2(ct);
+                const restam = max - usado;
+                if (restam <= 0) return <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-red-500/20 text-red-400">Limite de aditivo atingido</span>;
+                return <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${isDarkMode ? "bg-cyan-500/20 text-cyan-400" : "bg-purple-500/20 text-purple-600"}`}>{restam}m aditivo disponível</span>;
+              };
               const vGlobal = (vm: string, qm: string) => { const v = parseFloat(vm.replace(/[^\d.,]/g,"").replace(",",".")); const q = parseInt(qm); return (!isNaN(v)&&!isNaN(q)) ? `R$ ${(v*q).toLocaleString("pt-BR",{minimumFractionDigits:2})}` : "—"; };
               return (
               <div>
                 <h1 className="text-3xl font-bold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-cyan-400">Meus Contratos</h1>
                 <p className={`mb-6 text-sm ${isDarkMode ? "text-gray-400" : "text-gray-500"}`}>{loggedEnt?.nome ?? ""} · CNPJ: {loggedSec?.cnpj ?? ""}</p>
-                {(loggedSec?.contratos ?? []).length === 0 && (
-                  <p className={`text-center py-16 ${isDarkMode ? "text-gray-500" : "text-gray-400"}`}>Nenhum contrato disponível.</p>
+                <div className="flex gap-2 mb-6">
+                  <input
+                    type="text"
+                    value={clientContratoSearch}
+                    onChange={e => setClientContratoSearch(e.target.value)}
+                    placeholder="Pesquisar por número, objeto, licitação..."
+                    className={`flex-1 px-4 py-2 rounded-xl border text-sm ${isDarkMode ? "bg-slate-800 border-purple-500/30 text-white placeholder-gray-500" : "bg-white border-gray-300 text-slate-900 placeholder-gray-400"}`}
+                  />
+                </div>
+                {(loggedSec?.contratos ?? []).filter(ct => {
+                  const q = clientContratoSearch.trim().toLowerCase();
+                  if (!q) return true;
+                  return (
+                    (ct.numero ?? "").toLowerCase().includes(q) ||
+                    (ct.objeto ?? "").toLowerCase().includes(q) ||
+                    (ct.numeroLicitacao ?? "").toLowerCase().includes(q) ||
+                    (ct.dataInicial ?? "").toLowerCase().includes(q) ||
+                    (ct.dataEncerramento ?? "").toLowerCase().includes(q)
+                  );
+                }).length === 0 && (
+                  <p className={`text-center py-16 ${isDarkMode ? "text-gray-500" : "text-gray-400"}`}>{clientContratoSearch ? "Nenhum contrato encontrado." : "Nenhum contrato disponível."}</p>
                 )}
-                <div className="space-y-6">
-                  {(loggedSec?.contratos ?? []).map((ct, ci) => (
-                    <Card key={ct.id} className={isDarkMode ? "bg-slate-900/50 border-purple-500/20" : "bg-white border-gray-200 shadow-lg"}>
-                      <CardHeader className="pb-3">
-                        <div className="flex items-center gap-3 flex-wrap">
-                          <CardTitle className={isDarkMode ? "text-white" : "text-slate-900"}>Contrato Nº {ct.numero || `${ci + 1}`}</CardTitle>
-                          {ct.dataEncerramento && vigTag(ct.dataEncerramento)}
-                        </div>
-                        {ct.objeto && <p className={`text-sm mt-1 ${isDarkMode ? "text-gray-300" : "text-slate-700"}`}>{ct.objeto}</p>}
-                        {ct.numeroLicitacao && <p className={`text-sm ${isDarkMode ? "text-gray-400" : "text-gray-500"}`}>Licitação/Dispensa: {ct.numeroLicitacao}</p>}
-                      </CardHeader>
-                      <CardContent className="space-y-5">
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                          {[["Data Inicial",ct.dataInicial],["Data Encerramento",ct.dataEncerramento],["Qtd. Meses",ct.quantidadeMeses]].map(([l,v])=>(
-                            <div key={l}><p className={`text-xs ${isDarkMode ? "text-gray-500" : "text-gray-400"}`}>{l}</p><p className={`font-semibold ${isDarkMode ? "text-white" : "text-slate-900"}`}>{v || "—"}</p></div>
-                          ))}
-                          <div><p className={`text-xs ${isDarkMode ? "text-gray-500" : "text-gray-400"}`}>Valor Mensal</p><p className={`font-bold text-lg ${isDarkMode ? "text-cyan-400" : "text-purple-600"}`}>R$ {ct.valorMensal || "—"}</p></div>
-                          <div><p className={`text-xs ${isDarkMode ? "text-gray-500" : "text-gray-400"}`}>Valor Global</p><p className={`font-bold text-lg ${isDarkMode ? "text-cyan-400" : "text-purple-600"}`}>{vGlobal(ct.valorMensal, ct.quantidadeMeses)}</p></div>
-                        </div>
-                        {ct.arquivo && (
-                          <a href={ct.arquivo} download={`Contrato-${ct.numero}.pdf`} className="inline-flex">
-                            <Button size="sm" className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700">
-                              <Download className="w-4 h-4 mr-2" /> Baixar PDF do Contrato
-                            </Button>
-                          </a>
-                        )}
-                        {ct.aditivos.length > 0 && (
-                          <div>
-                            <p className={`text-sm font-semibold mb-2 ${isDarkMode ? "text-gray-300" : "text-slate-700"}`}>Aditivos ({ct.aditivos.length})</p>
-                            <div className="space-y-2">
-                              {ct.aditivos.map((ad, ai) => (
-                                <div key={ad.id} className={`rounded-lg p-3 ${isDarkMode ? "bg-slate-800 border border-purple-500/10" : "bg-gray-50 border border-gray-200"}`}>
-                                  <div className="flex items-start justify-between">
-                                    <div>
-                                      <div className="flex items-center gap-1.5 flex-wrap mb-1">
-                                        {ad.numero && <span className={`text-xs font-semibold ${isDarkMode ? "text-white" : "text-slate-900"}`}>Aditivo Nº {ad.numero}</span>}
-                                        {ad.tipos.map(t => <span key={t} className={`text-xs px-2 py-0.5 rounded-full font-medium ${t==="Prazo" ? "bg-blue-500/20 text-blue-400" : t==="Acréscimo" ? "bg-green-500/20 text-green-400" : "bg-orange-500/20 text-orange-400"}`}>{t}</span>)}
-                                      </div>
-                                      {ad.objeto && <p className={`text-xs font-medium mb-0.5 ${isDarkMode ? "text-gray-200" : "text-slate-700"}`}>{ad.objeto}</p>}
-                                      <p className={`text-xs ${isDarkMode ? "text-gray-400" : "text-gray-500"}`}>
-                                        {ad.dataInicial} → {ad.dataEncerramento}
-                                        {(ad.tipos.includes("Acréscimo")||ad.tipos.includes("Redução")) && ad.novoValorMensal && <span> · Novo valor: R$ {ad.novoValorMensal}</span>}
-                                      </p>
-                                    </div>
-                                    {ad.arquivo && (
-                                      <a href={ad.arquivo} download={`Aditivo-${ci+1}-${ai+1}.pdf`}>
-                                        <Button size="sm" variant="outline" className={`text-xs h-7 ${isDarkMode ? "border-purple-500/30 text-purple-400" : "border-purple-300 text-purple-600"}`}>
-                                          <Download className="w-3 h-3 mr-1" /> PDF
-                                        </Button>
-                                      </a>
-                                    )}
+                <div className="space-y-3">
+                  {(loggedSec?.contratos ?? []).filter(ct => {
+                    const q = clientContratoSearch.trim().toLowerCase();
+                    if (!q) return true;
+                    return (
+                      (ct.numero ?? "").toLowerCase().includes(q) ||
+                      (ct.objeto ?? "").toLowerCase().includes(q) ||
+                      (ct.numeroLicitacao ?? "").toLowerCase().includes(q) ||
+                      (ct.dataInicial ?? "").toLowerCase().includes(q) ||
+                      (ct.dataEncerramento ?? "").toLowerCase().includes(q)
+                    );
+                  }).map((ct, ci) => {
+                    const aberto = clientContratoExpandido === ct.id;
+                    return (
+                      <div key={ct.id} className={`rounded-xl border transition-all ${isDarkMode ? "bg-slate-900/50 border-purple-500/20" : "bg-white border-gray-200 shadow-sm"}`}>
+                        {/* Cabeçalho clicável */}
+                        <button
+                          onClick={() => setClientContratoExpandido(aberto ? null : ct.id)}
+                          className="w-full text-left px-5 py-4 flex items-center justify-between gap-3"
+                        >
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                              <span className={`font-bold ${isDarkMode ? "text-white" : "text-slate-900"}`}>Contrato Nº {ct.numero || `${ci + 1}`}</span>
+                              {ct.dataEncerramento && vigTag(ct.dataEncerramento)}
+                              {prazoTag(ct)}
+                            </div>
+                            {ct.objeto && <p className={`text-sm truncate ${isDarkMode ? "text-gray-300" : "text-slate-600"}`}>{ct.objeto}</p>}
+                            <p className={`text-xs mt-0.5 ${isDarkMode ? "text-gray-500" : "text-gray-400"}`}>
+                              {[ct.numeroLicitacao && `Licitação: ${ct.numeroLicitacao}`, ct.dataInicial && `Início: ${ct.dataInicial}`, ct.dataEncerramento && `Enc.: ${ct.dataEncerramento}`, ct.quantidadeMeses && `${ct.quantidadeMeses} meses`, ct.valorMensal && `Mensal: R$ ${ct.valorMensal}`, ct.valorMensal && ct.quantidadeMeses && `Valor Global: ${vGlobal(ct.valorMensal, ct.quantidadeMeses)}`].filter(Boolean).join(" · ")}
+                            </p>
+                          </div>
+                          <ChevronRight className={`w-5 h-5 flex-shrink-0 transition-transform ${isDarkMode ? "text-gray-400" : "text-gray-400"} ${aberto ? "rotate-90" : ""}`} />
+                        </button>
+
+                        {/* Detalhes expandidos */}
+                        {aberto && (
+                          <div className={`px-5 pb-5 pt-1 border-t space-y-5 ${isDarkMode ? "border-purple-500/20" : "border-gray-100"}`}>
+                            {/* Painel de limite de prorrogação */}
+                            {ct.artigo && (() => {
+                              const max = ARTIGO_MAX_MESES[ct.artigo] ?? 0;
+                              const usado = mesesUsados2(ct);
+                              const restam = max - usado;
+                              const esgotado = restam <= 0;
+                              return (
+                                <div className={`mt-3 p-3 rounded-xl border text-sm ${
+                                  esgotado
+                                    ? "border-red-500/50 bg-red-500/10"
+                                    : restam <= 12
+                                    ? "border-orange-500/40 bg-orange-500/10"
+                                    : (isDarkMode ? "border-cyan-500/30 bg-cyan-500/10" : "border-purple-500/30 bg-purple-50")
+                                }`}>
+                                  <p className={`font-semibold mb-1 ${
+                                    esgotado ? "text-red-400" : restam <= 12 ? "text-orange-400" : (isDarkMode ? "text-cyan-300" : "text-purple-700")
+                                  }`}>
+                                    📋 {ARTIGO_NOMES[ct.artigo]}
+                                  </p>
+                                  <div className={`flex flex-wrap gap-x-5 gap-y-1 text-xs ${
+                                    esgotado ? "text-red-300" : restam <= 12 ? "text-orange-300" : (isDarkMode ? "text-cyan-200" : "text-purple-600")
+                                  }`}>
+                                    <span>Máximo total: <strong>{max} meses</strong></span>
+                                    <span>Já utilizado: <strong>{usado} meses</strong></span>
+                                    <span className={esgotado ? "text-red-400 font-bold" : restam <= 12 ? "text-orange-400 font-bold" : ""}>
+                                      {esgotado ? "⛔ Limite atingido — sem prazo para novos aditivos" : `Disponível para prorrogação: `}
+                                      {!esgotado && <strong>{restam} meses</strong>}
+                                    </span>
                                   </div>
                                 </div>
+                              );
+                            })()}
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 pt-3">
+                              {[["Data Inicial",ct.dataInicial],["Data Encerramento",ct.dataEncerramento],["Qtd. Meses",ct.quantidadeMeses]].map(([l,v])=>(
+                                <div key={l}><p className={`text-xs ${isDarkMode ? "text-gray-500" : "text-gray-400"}`}>{l}</p><p className={`font-semibold ${isDarkMode ? "text-white" : "text-slate-900"}`}>{v || "—"}</p></div>
                               ))}
+                              <div><p className={`text-xs ${isDarkMode ? "text-gray-500" : "text-gray-400"}`}>Valor Mensal</p><p className={`font-bold text-lg ${isDarkMode ? "text-cyan-400" : "text-purple-600"}`}>R$ {ct.valorMensal || "—"}</p></div>
+                              <div><p className={`text-xs ${isDarkMode ? "text-gray-500" : "text-gray-400"}`}>Valor Global</p><p className={`font-bold text-lg ${isDarkMode ? "text-cyan-400" : "text-purple-600"}`}>{vGlobal(ct.valorMensal, ct.quantidadeMeses)}</p></div>
                             </div>
+                            {ct.arquivo && (
+                              <a href={ct.arquivo} download={`Contrato-${ct.numero}.pdf`} className="inline-flex">
+                                <Button size="sm" className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700">
+                                  <Download className="w-4 h-4 mr-2" /> Baixar PDF do Contrato
+                                </Button>
+                              </a>
+                            )}
+                            {ct.aditivos.length > 0 && (
+                              <div>
+                                <p className={`text-sm font-semibold mb-2 ${isDarkMode ? "text-gray-300" : "text-slate-700"}`}>Aditivos ({ct.aditivos.length})</p>
+                                <div className="space-y-2">
+                                  {ct.aditivos.map((ad, ai) => (
+                                    <div key={ad.id} className={`rounded-lg p-3 ${isDarkMode ? "bg-slate-800 border border-purple-500/10" : "bg-gray-50 border border-gray-200"}`}>
+                                      <div className="flex items-start justify-between">
+                                        <div>
+                                          <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                                            {ad.numero && <span className={`text-xs font-semibold ${isDarkMode ? "text-white" : "text-slate-900"}`}>Aditivo Nº {ad.numero}</span>}
+                                            {ad.tipos.map(t => <span key={t} className={`text-xs px-2 py-0.5 rounded-full font-medium ${t==="Prazo" ? "bg-blue-500/20 text-blue-400" : t==="Acréscimo" ? "bg-green-500/20 text-green-400" : "bg-orange-500/20 text-orange-400"}`}>{t}</span>)}
+                                          </div>
+                                          {ad.objeto && <p className={`text-xs font-medium mb-0.5 ${isDarkMode ? "text-gray-200" : "text-slate-700"}`}>{ad.objeto}</p>}
+                                          <p className={`text-xs ${isDarkMode ? "text-gray-400" : "text-gray-500"}`}>
+                                            {ad.dataInicial} → {ad.dataEncerramento}
+                                            {(ad.tipos.includes("Acréscimo")||ad.tipos.includes("Redução")) && ad.novoValorMensal && <span> · Novo valor: R$ {ad.novoValorMensal}</span>}
+                                          </p>
+                                        </div>
+                                        {ad.arquivo && (
+                                          <a href={ad.arquivo} download={`Aditivo-${ci+1}-${ai+1}.pdf`}>
+                                            <Button size="sm" variant="outline" className={`text-xs h-7 ${isDarkMode ? "border-purple-500/30 text-purple-400" : "border-purple-300 text-purple-600"}`}>
+                                              <Download className="w-3 h-3 mr-1" /> PDF
+                                            </Button>
+                                          </a>
+                                        )}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
                           </div>
                         )}
-                      </CardContent>
-                    </Card>
-                  ))}
+                      </div>
+                    );
+                  })}
                 </div>
-                <Card className={`mt-6 ${isDarkMode ? "bg-slate-900/50 border-purple-500/20" : "bg-white border-gray-200 shadow-lg"}`}>
-                  <CardHeader>
-                    <CardTitle className={isDarkMode ? "text-white flex items-center gap-2" : "text-slate-900 flex items-center gap-2"}>
-                      <Package className="w-6 h-6 text-purple-400" /> Sistemas Contratados
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {(loggedSec?.sistemasContratados ?? []).map((sistema, index) => (
-                        <div key={index} className={isDarkMode ? "flex items-center justify-between p-4 bg-slate-800/50 rounded-lg border border-purple-500/10" : "flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200"}>
-                          <div className="flex items-center gap-3">
-                            <div className="p-2 bg-gradient-to-r from-purple-600 to-cyan-600 rounded"><CheckCircle2 className="w-5 h-5 text-white" /></div>
-                            <div>
-                              <p className={isDarkMode ? "text-white font-semibold" : "text-slate-900 font-semibold"}>{sistema.nome}</p>
-                              <p className={isDarkMode ? "text-gray-400 text-sm" : "text-gray-600 text-sm"}>Início: {sistema.dataInicio}</p>
-                            </div>
-                          </div>
-                          <Badge className="bg-green-500 text-white border-none">{sistema.status}</Badge>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
               </div>
               );
             })()}
 
+            {/* Sistemas */}
+            {currentModal === 'systems' && (
+              <div>
+                <h1 className="text-3xl font-bold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-cyan-400">Sistemas</h1>
+                <p className={`mb-8 text-sm ${isDarkMode ? "text-gray-400" : "text-gray-500"}`}>{loggedEnt?.nome ?? ""} · CNPJ: {loggedSec?.cnpj ?? ""}</p>
+                {(loggedSec?.sistemasContratados ?? []).length === 0 ? (
+                  <p className={`text-center py-16 ${isDarkMode ? "text-gray-500" : "text-gray-400"}`}>Nenhum sistema contratado.</p>
+                ) : (
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {(loggedSec?.sistemasContratados ?? []).map((sistema, index) => {
+                      const statusColor = sistema.status?.toLowerCase() === "ativo" ? "bg-green-500" : sistema.status?.toLowerCase() === "inativo" ? "bg-red-500" : "bg-yellow-500";
+                      return (
+                      <div key={index} className={`rounded-xl border p-5 flex items-center gap-4 ${isDarkMode ? "bg-slate-900/50 border-purple-500/20" : "bg-white border-gray-200 shadow-sm"}`}>
+                        <div className="p-3 bg-gradient-to-r from-purple-600 to-cyan-600 rounded-xl flex-shrink-0">
+                          <Package className="w-6 h-6 text-white" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className={`font-bold truncate ${isDarkMode ? "text-white" : "text-slate-900"}`}>{sistema.nome}</p>
+                            <Badge className={`${statusColor} text-white border-none text-xs flex-shrink-0`}>{sistema.status}</Badge>
+                          </div>
+                          <p className={`text-xs mt-0.5 ${isDarkMode ? "text-gray-400" : "text-gray-500"}`}>Início: {sistema.dataInicio || "—"}</p>
+                        </div>
+                        <CheckCircle2 className="w-5 h-5 text-green-400 flex-shrink-0" />
+                      </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Notas Fiscais */}
             {currentModal === 'invoices' && (
               <div>
-                <h1 className="text-3xl font-bold mb-8 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-cyan-400">Notas Fiscais</h1>
+                <h1 className="text-3xl font-bold mb-6 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-cyan-400">Notas Fiscais</h1>
+
+                {/* Barra de pesquisa */}
+                <input
+                  type="text"
+                  value={clientNfSearch}
+                  onChange={e => setClientNfSearch(e.target.value)}
+                  placeholder="Pesquisar por número, referência, data, valor..."
+                  className={`w-full px-4 py-2 rounded-xl border text-sm mb-6 ${isDarkMode ? "bg-slate-800 border-purple-500/30 text-white placeholder-gray-500" : "bg-white border-gray-300 text-slate-900 placeholder-gray-400"}`}
+                />
+
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {(loggedSec?.notasFiscais ?? []).map((nf, index) => (
-                    <Card key={index} className={isDarkMode ? "bg-slate-900/50 border-purple-500/20" : "bg-white border-gray-200 shadow-lg"}>
-                      <CardHeader>
-                        <div className="flex items-center justify-between mb-2">
-                          <CardTitle className={isDarkMode ? "text-white" : "text-slate-900"}>{nf.numero}</CardTitle>
-                          <Badge className="bg-green-500 text-white border-none">{nf.status}</Badge>
-                        </div>
-                        <CardDescription className={isDarkMode ? "text-gray-400" : "text-gray-600"}>Emissão: {nf.data}</CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="mb-4">
-                          <p className={isDarkMode ? "text-gray-400 text-sm mb-1" : "text-gray-600 text-sm mb-1"}>Valor Total</p>
-                          <p className={isDarkMode ? "text-cyan-400 font-semibold text-2xl" : "text-purple-600 font-semibold text-2xl"}>{nf.valor}</p>
-                        </div>
-                        {nf.arquivo ? (
-                          <a href={nf.arquivo} download={`${nf.numero}.pdf`}>
-                            <Button className="w-full bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700">
-                              <Download className="w-4 h-4 mr-2" /> Baixar NF
-                            </Button>
-                          </a>
-                        ) : (
-                          <Button disabled className="w-full bg-gradient-to-r from-purple-600 to-cyan-600 opacity-40 cursor-not-allowed">
-                            <Download className="w-4 h-4 mr-2" /> Arquivo não disponível
-                          </Button>
-                        )}
-                      </CardContent>
-                    </Card>
-                  ))}
+                  {(loggedSec?.notasFiscais ?? []).filter(nf => {
+                    const q = clientNfSearch.trim().toLowerCase();
+                    if (!q) return true;
+                    return (
+                      (nf.numero ?? "").toLowerCase().includes(q) ||
+                      (nf.referencia ?? "").toLowerCase().includes(q) ||
+                      (nf.data ?? "").toLowerCase().includes(q) ||
+                      (nf.dataVencimento ?? "").toLowerCase().includes(q) ||
+                      (nf.valor ?? "").toLowerCase().includes(q) ||
+                      (nf.status ?? "").toLowerCase().includes(q)
+                    );
+                  }).map((nf, index) => {
+                    const statusReal = nf.dataPagamento ? "Pago" : (() => {
+                      if (!nf.dataVencimento) return nf.status;
+                      const [d,m,a] = nf.dataVencimento.split("/");
+                      const dv = new Date(+a,+m-1,+d);
+                      dv.setHours(0,0,0,0);
+                      const hoje = new Date(); hoje.setHours(0,0,0,0);
+                      return dv < hoje ? "Vencida" : nf.status;
+                    })();
+                    const badgeColor = statusReal === "Pago" ? "bg-green-500" : statusReal === "Vencida" ? "bg-red-500" : "bg-yellow-500";
+                    const realIdx = (loggedSec?.notasFiscais ?? []).indexOf(nf);
+                    return (
+                      <Card key={index} className={isDarkMode ? "bg-slate-900/50 border-purple-500/20" : "bg-white border-gray-200 shadow-lg"}>
+                        <CardContent className="p-5 space-y-3">
+                          {/* Número + Status */}
+                          <div className="flex items-center justify-between">
+                            <span className={`text-lg font-bold ${isDarkMode ? "text-white" : "text-slate-900"}`}>Nº {nf.numero}</span>
+                            <button
+                              onClick={() => {
+                                setNfPagamentoIdx(realIdx);
+                                setPagamentoDataError("");
+                                setPagamentoComprovanteNome(nf.comprovante ? "comprovante" : "");
+                                setPagamentoComprovante(nf.comprovante ?? "");
+                                setNfPagamentoIsEdit(statusReal === "Pago");
+                                if (nf.dataPagamento) {
+                                  const [d,m,a] = nf.dataPagamento.split("/");
+                                  if (d && m && a) setPagamentoData(`${a}-${m.padStart(2,"0")}-${d.padStart(2,"0")}`);
+                                  else setPagamentoData("");
+                                } else {
+                                  setPagamentoData("");
+                                }
+                                if (nf.data) {
+                                  const [d,m,a] = nf.data.split("/");
+                                  if (d && m && a) setPagamentoMinData(`${a}-${m.padStart(2,"0")}-${d.padStart(2,"0")}`);
+                                  else setPagamentoMinData("");
+                                } else { setPagamentoMinData(""); }
+                                setShowMarcarPagoModal(true);
+                              }}
+                              className={`text-xs font-semibold px-2 py-1 rounded-full text-white cursor-pointer hover:opacity-80 transition-opacity ${badgeColor}`}>{statusReal}</button>
+                          </div>
+
+                          {/* Grid de infos */}
+                          <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                            <div>
+                              <p className={`text-xs mb-0.5 ${isDarkMode ? "text-gray-500" : "text-gray-400"}`}>Referência</p>
+                              <p className={`font-medium ${isDarkMode ? "text-gray-200" : "text-slate-800"}`}>{nf.referencia || "—"}</p>
+                            </div>
+                            <div>
+                              <p className={`text-xs mb-0.5 ${isDarkMode ? "text-gray-500" : "text-gray-400"}`}>Emissão</p>
+                              <p className={`font-medium ${isDarkMode ? "text-gray-200" : "text-slate-800"}`}>{nf.data || "—"}</p>
+                            </div>
+                            <div>
+                              <p className={`text-xs mb-0.5 ${isDarkMode ? "text-gray-500" : "text-gray-400"}`}>Vencimento</p>
+                              <p className={`font-medium ${statusReal === "Vencida" ? "text-red-400" : isDarkMode ? "text-gray-200" : "text-slate-800"}`}>{nf.dataVencimento || "—"}</p>
+                            </div>
+                            <div>
+                              <p className={`text-xs mb-0.5 ${isDarkMode ? "text-gray-500" : "text-gray-400"}`}>Valor</p>
+                              <p className={`font-bold text-base ${isDarkMode ? "text-cyan-400" : "text-purple-600"}`}>R$ {nf.valor}</p>
+                            </div>
+                          </div>
+
+                          {/* Pago em */}
+                          {statusReal === "Pago" && nf.dataPagamento && (
+                            <button onClick={() => {
+                              setNfPagamentoIdx(realIdx);
+                              setPagamentoDataError("");
+                              setPagamentoComprovanteNome(nf.comprovante ? "comprovante" : "");
+                              setPagamentoComprovante(nf.comprovante ?? "");
+                              setNfPagamentoIsEdit(true);
+                              const [d,m,a] = nf.dataPagamento.split("/");
+                              if (d && m && a) setPagamentoData(`${a}-${m.padStart(2,"0")}-${d.padStart(2,"0")}`);
+                              else setPagamentoData("");
+                              if (nf.data) {
+                                const [dd,mm,aa] = nf.data.split("/");
+                                if (dd && mm && aa) setPagamentoMinData(`${aa}-${mm.padStart(2,"0")}-${dd.padStart(2,"0")}`);
+                                else setPagamentoMinData("");
+                              } else { setPagamentoMinData(""); }
+                              setShowMarcarPagoModal(true);
+                            }} className={`text-xs text-left hover:underline cursor-pointer ${isDarkMode ? "text-green-400" : "text-green-600"}`}>✓ Pago em {nf.dataPagamento}</button>
+                          )}
+
+                          {/* Botões */}
+                          <div className="space-y-2 pt-1">
+                            {nf.arquivo ? (
+                              <a href={nf.arquivo} download={`NF-${nf.numero}.pdf`} className="block">
+                                <Button className="w-full bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 text-sm">
+                                  <Download className="w-4 h-4 mr-2" /> Baixar Nota Fiscal
+                                </Button>
+                              </a>
+                            ) : (
+                              <Button disabled className="w-full text-sm opacity-40 cursor-not-allowed bg-gradient-to-r from-purple-600 to-cyan-600">
+                                <Download className="w-4 h-4 mr-2" /> PDF não disponível
+                              </Button>
+                            )}
+                            {statusReal !== "Pago" && (
+                              <Button variant="outline" onClick={() => {
+                                setNfPagamentoIdx(realIdx);
+                                setPagamentoData("");
+                                setPagamentoComprovante("");
+                                setPagamentoComprovanteNome("");
+                                setPagamentoDataError("");
+                                setNfPagamentoIsEdit(false);
+                                if (nf.data) {
+                                  const [d,m,a] = nf.data.split("/");
+                                  if (d && m && a) setPagamentoMinData(`${a}-${m.padStart(2,"0")}-${d.padStart(2,"0")}`);
+                                  else setPagamentoMinData("");
+                                } else {
+                                  setPagamentoMinData("");
+                                }
+                                setShowMarcarPagoModal(true);
+                              }}
+                                className={`w-full text-sm ${isDarkMode ? "border-green-500/50 text-green-400 hover:bg-green-500/10" : "border-green-500 text-green-600 hover:bg-green-50"}`}>
+                                ✓ Marcar como Pago
+                              </Button>
+                            )}
+                            {statusReal === "Pago" && nf.comprovante && (
+                              <a href={nf.comprovante} download={`Comprovante-NF-${nf.numero}`} className="block">
+                                <Button variant="outline" className={`w-full text-sm ${isDarkMode ? "border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/10" : "border-cyan-500 text-cyan-600 hover:bg-cyan-50"}`}>
+                                  <Download className="w-4 h-4 mr-2" /> Baixar Comprovante
+                                </Button>
+                              </a>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                  {(loggedSec?.notasFiscais ?? []).length === 0 && (
+                    <p className={`col-span-3 text-center py-12 ${isDarkMode ? "text-gray-500" : "text-gray-400"}`}>Nenhuma nota fiscal disponível.</p>
+                  )}
                 </div>
+
+                {/* Modal: Marcar/Editar Pagamento */}
+                {showMarcarPagoModal && (
+                  <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4" style={{backdropFilter:"blur(4px)",background:"rgba(0,0,0,0.6)"}}
+                    onClick={() => setShowMarcarPagoModal(false)}>
+                    <div className={`w-full max-w-md rounded-2xl shadow-2xl ${isDarkMode ? "bg-slate-900 border border-purple-500/30" : "bg-white border border-gray-200"}`}
+                      onClick={e => e.stopPropagation()}>
+                      <div className="p-6 space-y-4">
+                        <h2 className={`text-lg font-bold ${isDarkMode ? "text-white" : "text-slate-900"}`}>
+                          {nfPagamentoIsEdit ? "Editar Pagamento" : "Confirmar Pagamento"}
+                        </h2>
+                        <div>
+                          <label className={`block text-sm font-medium mb-1 ${isDarkMode ? "text-gray-300" : "text-gray-700"}`}>Data de Pagamento</label>
+                          <div className="relative flex items-center gap-2">
+                            <input type="date" value={pagamentoData}
+                            min={pagamentoMinData || undefined}
+                            max="2099-12-31"
+                            onChange={e => {
+                              const val = e.target.value;
+                              setPagamentoData(val);
+                              if (!val) { setPagamentoDataError(""); return; }
+                              const [ano, mes, dia] = val.split("-").map(Number);
+                              if (!ano || !mes || !dia) { setPagamentoDataError("Data inválida."); return; }
+                              if (ano < 1900 || ano > 2099) { setPagamentoDataError("Ano deve estar entre 1900 e 2099."); return; }
+                              const dt = new Date(ano, mes - 1, dia);
+                              if (dt.getFullYear() !== ano || dt.getMonth() !== mes - 1 || dt.getDate() !== dia) {
+                                setPagamentoDataError("Data inválida para o calendário (ex: 31/02 não existe).");
+                                return;
+                              }
+                              if (pagamentoMinData) {
+                                const [mA, mM, mD] = pagamentoMinData.split("-").map(Number);
+                                const dtMin = new Date(mA, mM - 1, mD);
+                                if (dt < dtMin) { setPagamentoDataError("Data não pode ser anterior à emissão da nota."); return; }
+                              }
+                              setPagamentoDataError("");
+                            }}
+                            className={`flex-1 px-3 py-2 rounded-lg border text-sm ${pagamentoDataError ? "border-red-500" : isDarkMode ? "border-purple-500/30" : "border-gray-300"} ${isDarkMode ? "bg-slate-800 text-white" : "bg-white text-slate-900"}`} />
+                            {nfPagamentoIsEdit && pagamentoData && (
+                              <button type="button" onClick={() => { setPagamentoData(""); setPagamentoDataError(""); }}
+                                title="Limpar data (desfaz pagamento)"
+                                className={`flex-shrink-0 px-3 py-2 rounded-lg border text-xs font-medium cursor-pointer transition-colors ${isDarkMode ? "border-red-500/50 text-red-400 hover:bg-red-500/10 bg-transparent" : "border-red-400 text-red-500 hover:bg-red-50 bg-white"}`}>✕ Limpar</button>
+                            )}
+                          </div>
+                          {pagamentoDataError && <p className="text-xs text-red-400 mt-1">⚠ {pagamentoDataError}</p>}
+                        </div>
+                        <div>
+                          <label className={`block text-sm font-medium mb-1 ${isDarkMode ? "text-gray-300" : "text-gray-700"}`}>Comprovante <span className={isDarkMode ? "text-gray-500" : "text-gray-400"}>(opcional)</span></label>
+                          {pagamentoComprovanteNome ? (
+                            <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm ${isDarkMode ? "bg-slate-800 border-purple-500/30 text-gray-300" : "bg-gray-50 border-gray-300 text-slate-700"}`}>
+                              <span className="flex-1 truncate">📎 {pagamentoComprovanteNome}</span>
+                              <label className={`cursor-pointer text-xs px-2 py-0.5 rounded font-medium ${isDarkMode ? "bg-purple-700 text-white hover:bg-purple-600" : "bg-purple-100 text-purple-700 hover:bg-purple-200"}`}>
+                                Substituir
+                                <input type="file" accept="image/*,.pdf" className="hidden" onChange={e => {
+                                  const file = e.target.files?.[0];
+                                  if (!file) return;
+                                  setPagamentoComprovanteNome(file.name);
+                                  const reader = new FileReader();
+                                  reader.onload = ev => setPagamentoComprovante(ev.target?.result as string ?? "");
+                                  reader.readAsDataURL(file);
+                                  e.target.value = "";
+                                }} />
+                              </label>
+                              <button type="button" onClick={() => { setPagamentoComprovante(""); setPagamentoComprovanteNome(""); }}
+                                className="text-xs text-red-400 hover:text-red-300 px-1">Remover</button>
+                            </div>
+                          ) : (
+                            <label className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer text-sm ${isDarkMode ? "bg-slate-800 border-purple-500/30 text-gray-400 hover:border-purple-400" : "bg-white border-gray-300 text-gray-500 hover:border-purple-400"}`}>
+                              <span>📎 Escolher arquivo...</span>
+                              <input type="file" accept="image/*,.pdf" className="hidden" onChange={e => {
+                                const file = e.target.files?.[0];
+                                if (!file) return;
+                                setPagamentoComprovanteNome(file.name);
+                                const reader = new FileReader();
+                                reader.onload = ev => setPagamentoComprovante(ev.target?.result as string ?? "");
+                                reader.readAsDataURL(file);
+                                e.target.value = "";
+                              }} />
+                            </label>
+                          )}
+                        </div>
+                        <div className="flex justify-end gap-3 pt-2">
+                          <Button variant="outline" onClick={() => setShowMarcarPagoModal(false)} className="border-gray-400 text-black hover:bg-gray-100">Cancelar</Button>
+                          <Button
+                            disabled={!!pagamentoDataError || (!pagamentoData && !nfPagamentoIsEdit)}
+                            onClick={() => {
+                              if (nfPagamentoIdx === null || !loggedInUser) return;
+                              if (!pagamentoData && nfPagamentoIsEdit) {
+                                // Desfaz pagamento — reverte para Pendente
+                                updateSecretaria(loggedInUser.entidadeId, loggedInUser.secretariaId, sec => ({
+                                  ...sec,
+                                  notasFiscais: sec.notasFiscais.map((nf, i) => i === nfPagamentoIdx
+                                    ? { ...nf, status: "Pendente", dataPagamento: "", comprovante: "" }
+                                    : nf
+                                  )
+                                }));
+                              } else if (pagamentoData) {
+                                const fmt = (() => { const [a,m,d] = pagamentoData.split("-"); return `${d}/${m}/${a}`; })();
+                                updateSecretaria(loggedInUser.entidadeId, loggedInUser.secretariaId, sec => ({
+                                  ...sec,
+                                  notasFiscais: sec.notasFiscais.map((nf, i) => i === nfPagamentoIdx
+                                    ? { ...nf, status: "Pago", dataPagamento: fmt, comprovante: pagamentoComprovante || nf.comprovante }
+                                    : nf
+                                  )
+                                }));
+                              }
+                              setShowMarcarPagoModal(false);
+                            }}
+                            className={nfPagamentoIsEdit && !pagamentoData ? "bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700" : "bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"}>
+                            {nfPagamentoIsEdit && !pagamentoData ? "Desfazer Pagamento" : "Confirmar Pagamento"}
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
             {/* Relatórios */}
             {currentModal === 'reports' && (
               <div>
-                <h1 className="text-3xl font-bold mb-8 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-cyan-400">Relatórios</h1>
+                <h1 className="text-3xl font-bold mb-6 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-cyan-400">Relatórios</h1>
+                <input
+                  type="text"
+                  value={clientRelatorioSearch}
+                  onChange={e => setClientRelatorioSearch(e.target.value)}
+                  placeholder="Pesquisar por título, tipo ou data..."
+                  className={`w-full px-4 py-2 rounded-xl border text-sm mb-6 ${isDarkMode ? "bg-slate-800 border-purple-500/30 text-white placeholder-gray-500" : "bg-white border-gray-300 text-slate-900 placeholder-gray-400"}`}
+                />
+                {(loggedSec?.relatorios ?? []).filter(r => {
+                  const q = clientRelatorioSearch.trim().toLowerCase();
+                  if (!q) return true;
+                  return (
+                    (r.titulo ?? "").toLowerCase().includes(q) ||
+                    (r.tipo ?? "").toLowerCase().includes(q) ||
+                    (r.data ?? "").toLowerCase().includes(q)
+                  );
+                }).length === 0 && (
+                  <p className={`text-center py-16 ${isDarkMode ? "text-gray-500" : "text-gray-400"}`}>{clientRelatorioSearch ? "Nenhum relatório encontrado." : "Nenhum relatório disponível."}</p>
+                )}
                 <div className="grid md:grid-cols-2 gap-6">
-                  {(loggedSec?.relatorios ?? []).map((relatorio, index) => (
+                  {(loggedSec?.relatorios ?? []).filter(r => {
+                    const q = clientRelatorioSearch.trim().toLowerCase();
+                    if (!q) return true;
+                    return (
+                      (r.titulo ?? "").toLowerCase().includes(q) ||
+                      (r.tipo ?? "").toLowerCase().includes(q) ||
+                      (r.data ?? "").toLowerCase().includes(q)
+                    );
+                  }).map((relatorio, index) => (
                     <Card key={index} className={isDarkMode ? "bg-slate-900/50 border-purple-500/20" : "bg-white border-gray-200 shadow-lg"}>
                       <CardHeader>
                         <div className="flex items-start justify-between mb-2">
@@ -3732,37 +4724,17 @@ export default function App() {
             )}
 
             {/* Configurações */}
-            {currentModal === 'settings' && (
-              <div className="max-w-4xl">
-                <h1 className="text-3xl font-bold mb-8 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-cyan-400">Configurações da Conta</h1>
-                <div className="space-y-6">
-                  <Card className={isDarkMode ? "bg-slate-900/50 border-purple-500/20" : "bg-white border-gray-200 shadow-lg"}>
-                    <CardHeader><CardTitle className={isDarkMode ? "text-white" : "text-slate-900"}>Informações Pessoais</CardTitle></CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="flex items-center gap-4 mb-6">
-                        <ImageWithFallback src={loggedSec?.foto ?? ""} alt={(loggedSec?.responsavel ?? loggedInUser?.nome ?? "")} className="w-20 h-20 rounded-full object-cover border-4 border-purple-500" />
-                        <div>
-                          <p className={isDarkMode ? "text-white font-semibold text-lg" : "text-slate-900 font-semibold text-lg"}>{(loggedSec?.responsavel ?? loggedInUser?.nome ?? "")}</p>
-                          <p className={isDarkMode ? "text-gray-400" : "text-gray-600"}>{loggedSec?.cargo ?? ""}</p>
-                        </div>
-                      </div>
-                      <div><label className={isDarkMode ? "text-gray-300 text-sm font-medium mb-2 block" : "text-gray-700 text-sm font-medium mb-2 block"}>Nome Completo</label><input type="text" defaultValue={(loggedSec?.responsavel ?? loggedInUser?.nome ?? "")} className={isDarkMode ? "w-full p-3 bg-slate-800 border border-purple-500/20 rounded-lg text-white focus:outline-none focus:border-purple-500" : "w-full p-3 bg-white border border-gray-300 rounded-lg text-slate-900 focus:outline-none focus:border-purple-500"} /></div>
-                      <div><label className={isDarkMode ? "text-gray-300 text-sm font-medium mb-2 block" : "text-gray-700 text-sm font-medium mb-2 block"}>E-mail</label><input type="email" defaultValue={loggedInUser?.login ?? ""} className={isDarkMode ? "w-full p-3 bg-slate-800 border border-purple-500/20 rounded-lg text-white focus:outline-none focus:border-purple-500" : "w-full p-3 bg-white border border-gray-300 rounded-lg text-slate-900 focus:outline-none focus:border-purple-500"} /></div>
-                      <div><label className={isDarkMode ? "text-gray-300 text-sm font-medium mb-2 block" : "text-gray-700 text-sm font-medium mb-2 block"}>Telefone</label><input type="tel" defaultValue={loggedSec?.telefone ?? ""} className={isDarkMode ? "w-full p-3 bg-slate-800 border border-purple-500/20 rounded-lg text-white focus:outline-none focus:border-purple-500" : "w-full p-3 bg-white border border-gray-300 rounded-lg text-slate-900 focus:outline-none focus:border-purple-500"} /></div>
-                      <Button className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700">Salvar Alterações</Button>
-                    </CardContent>
-                  </Card>
-                  <Card className={isDarkMode ? "bg-slate-900/50 border-purple-500/20" : "bg-white border-gray-200 shadow-lg"}>
-                    <CardHeader><CardTitle className={isDarkMode ? "text-white" : "text-slate-900"}>Alterar Senha</CardTitle></CardHeader>
-                    <CardContent className="space-y-4">
-                      <div><label className={isDarkMode ? "text-gray-300 text-sm font-medium mb-2 block" : "text-gray-700 text-sm font-medium mb-2 block"}>Senha Atual</label><input type="password" placeholder="••••••••" className={isDarkMode ? "w-full p-3 bg-slate-800 border border-purple-500/20 rounded-lg text-white focus:outline-none focus:border-purple-500" : "w-full p-3 bg-white border border-gray-300 rounded-lg text-slate-900 focus:outline-none focus:border-purple-500"} /></div>
-                      <div><label className={isDarkMode ? "text-gray-300 text-sm font-medium mb-2 block" : "text-gray-700 text-sm font-medium mb-2 block"}>Nova Senha</label><input type="password" placeholder="••••••••" className={isDarkMode ? "w-full p-3 bg-slate-800 border border-purple-500/20 rounded-lg text-white focus:outline-none focus:border-purple-500" : "w-full p-3 bg-white border border-gray-300 rounded-lg text-slate-900 focus:outline-none focus:border-purple-500"} /></div>
-                      <div><label className={isDarkMode ? "text-gray-300 text-sm font-medium mb-2 block" : "text-gray-700 text-sm font-medium mb-2 block"}>Confirmar Nova Senha</label><input type="password" placeholder="••••••••" className={isDarkMode ? "w-full p-3 bg-slate-800 border border-purple-500/20 rounded-lg text-white focus:outline-none focus:border-purple-500" : "w-full p-3 bg-white border border-gray-300 rounded-lg text-slate-900 focus:outline-none focus:border-purple-500"} /></div>
-                      <Button className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700">Alterar Senha</Button>
-                    </CardContent>
-                  </Card>
-                </div>
-              </div>
+            {currentModal === 'settings' && loggedInUser && (
+              <ClientSettingsTab
+                key={loggedInUser.id}
+                user={loggedInUser}
+                isDarkMode={isDarkMode}
+                onSave={(patch) => {
+                  const updated = { ...loggedInUser, ...patch };
+                  setClientUsers(prev => prev.map(u => u.id === updated.id ? updated : u));
+                  setLoggedInUser(updated);
+                }}
+              />
             )}
 
           </main>
@@ -3825,16 +4797,16 @@ export default function App() {
                     className="flex items-center gap-3 hover:opacity-80 transition cursor-pointer"
                   >
                     <ImageWithFallback 
-                      src={loggedSec?.foto ?? ""}
-                      alt={(loggedSec?.responsavel ?? loggedInUser?.nome ?? "")}
+                      src={loggedInUser?.foto ?? loggedSec?.foto ?? ""}
+                      alt={loggedInUser?.nome ?? ""}
                       className="w-10 h-10 rounded-full object-cover border-2 border-purple-500"
                     />
                     <div className="hidden md:block text-left">
                       <p className={isDarkMode ? "text-white text-sm font-semibold" : "text-slate-900 text-sm font-semibold"}>
-                        {(loggedSec?.responsavel ?? loggedInUser?.nome ?? "")}
+                        {loggedInUser?.nome ?? ""}
                       </p>
                       <p className={isDarkMode ? "text-gray-400 text-xs" : "text-gray-600 text-xs"}>
-                        {loggedSec?.cargo ?? ""}
+                        {loggedInUser?.cargo ?? ""}
                       </p>
                     </div>
                   </button>
@@ -3847,7 +4819,7 @@ export default function App() {
                     }>
                       <div className="p-4 border-b border-purple-500/20">
                         <p className={isDarkMode ? "text-white font-semibold" : "text-slate-900 font-semibold"}>
-                          {(loggedSec?.responsavel ?? loggedInUser?.nome ?? "")}
+                          {loggedInUser?.nome ?? ""}
                         </p>
                         <p className={isDarkMode ? "text-gray-400 text-sm" : "text-gray-600 text-sm"}>
                           {(loggedEnt?.nome ?? "")}
@@ -5062,16 +6034,16 @@ export default function App() {
                   <CardContent className="space-y-4">
                     <div className="flex items-center gap-4 mb-6">
                       <ImageWithFallback 
-                        src={loggedSec?.foto ?? ""}
-                        alt={(loggedSec?.responsavel ?? loggedInUser?.nome ?? "")}
+                        src={loggedInUser?.foto ?? loggedSec?.foto ?? ""}
+                        alt={loggedInUser?.nome ?? ""}
                         className="w-20 h-20 rounded-full object-cover border-4 border-purple-500"
                       />
                       <div>
                         <p className={isDarkMode ? "text-white font-semibold text-lg" : "text-slate-900 font-semibold text-lg"}>
-                          {(loggedSec?.responsavel ?? loggedInUser?.nome ?? "")}
+                          {loggedInUser?.nome ?? ""}
                         </p>
                         <p className={isDarkMode ? "text-gray-400" : "text-gray-600"}>
-                          {loggedSec?.cargo ?? ""}
+                          {loggedInUser?.cargo ?? ""}
                         </p>
                       </div>
                     </div>
@@ -5082,7 +6054,7 @@ export default function App() {
                       </label>
                       <input
                         type="text"
-                        defaultValue={(loggedSec?.responsavel ?? loggedInUser?.nome ?? "")}
+                        defaultValue={loggedInUser?.nome ?? ""}
                         className={isDarkMode 
                           ? "w-full p-3 bg-slate-800 border border-purple-500/20 rounded-lg text-white focus:outline-none focus:border-purple-500"
                           : "w-full p-3 bg-white border border-gray-300 rounded-lg text-slate-900 focus:outline-none focus:border-purple-500"
@@ -5110,7 +6082,7 @@ export default function App() {
                       </label>
                       <input
                         type="tel"
-                        defaultValue={loggedSec?.telefone ?? ""}
+                        defaultValue={loggedInUser?.telefone ?? loggedSec?.telefone ?? ""}
                         className={isDarkMode 
                           ? "w-full p-3 bg-slate-800 border border-purple-500/20 rounded-lg text-white focus:outline-none focus:border-purple-500"
                           : "w-full p-3 bg-white border border-gray-300 rounded-lg text-slate-900 focus:outline-none focus:border-purple-500"
@@ -5252,11 +6224,8 @@ export default function App() {
                   <input
                     type="email"
                     value={loginEmail}
-                    onChange={(e) => setLoginEmail(e.target.value)}
-                    className={isDarkMode 
-                      ? "w-full p-3 bg-slate-800 border border-purple-500/20 rounded-lg text-white focus:outline-none focus:border-purple-500"
-                      : "w-full p-3 bg-white border border-gray-300 rounded-lg text-slate-900 focus:outline-none focus:border-purple-500"
-                    }
+                    onChange={(e) => { setLoginEmail(e.target.value); setLoginError(""); }}
+                    className={`w-full p-3 rounded-lg focus:outline-none transition ${loginError ? "border-2 border-red-500 bg-red-500/5" : isDarkMode ? "bg-slate-800 border border-purple-500/20 focus:border-purple-500 text-white" : "bg-white border border-gray-300 focus:border-purple-500 text-slate-900"}`}
                     placeholder="seu.email@exemplo.com.br"
                     required
                   />
@@ -5268,16 +6237,22 @@ export default function App() {
                   <input
                     type="password"
                     value={loginPassword}
-                    onChange={(e) => setLoginPassword(e.target.value)}
-                    className={isDarkMode 
-                      ? "w-full p-3 bg-slate-800 border border-purple-500/20 rounded-lg text-white focus:outline-none focus:border-purple-500"
-                      : "w-full p-3 bg-white border border-gray-300 rounded-lg text-slate-900 focus:outline-none focus:border-purple-500"
-                    }
+                    onChange={(e) => { setLoginPassword(e.target.value); setLoginError(""); }}
+                    className={`w-full p-3 rounded-lg focus:outline-none transition ${loginError ? "border-2 border-red-500 bg-red-500/5" : isDarkMode ? "bg-slate-800 border border-purple-500/20 focus:border-purple-500 text-white" : "bg-white border border-gray-300 focus:border-purple-500 text-slate-900"}`}
                     placeholder="••••••••"
                     required
                   />
                 </div>
-                <div className="flex gap-3 pt-4">
+
+                {/* Erro inline */}
+                {loginError && (
+                  <div className="flex items-start gap-2.5 bg-red-500/10 border border-red-500/40 rounded-xl px-4 py-3">
+                    <span className="text-red-400 text-lg leading-none mt-0.5">&#9888;</span>
+                    <p className="text-red-400 text-sm font-medium leading-snug">{loginError}</p>
+                  </div>
+                )}
+
+                <div className="flex gap-3 pt-2">
                   <Button
                     type="submit"
                     className="flex-1 bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700"
@@ -5288,7 +6263,7 @@ export default function App() {
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => setShowLoginModal(false)}
+                    onClick={() => { setShowLoginModal(false); setLoginError(""); }}
                     className={isDarkMode 
                       ? "border-purple-500/50 text-purple-400 hover:bg-purple-500/10"
                       : "border-purple-500 text-purple-600 hover:bg-purple-50"
