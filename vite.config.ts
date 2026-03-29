@@ -16,4 +16,36 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  build: {
+    // [SECURITY] Desativa source maps em produção — impede engenharia reversa
+    sourcemap: false,
+    // [SECURITY] Ofuscação máxima via Terser
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true,
+        pure_funcs: ['console.log', 'console.info', 'console.warn', 'console.debug'],
+        passes: 3,
+      },
+      mangle: {
+        // Embaralha nomes de variáveis, funções e propriedades
+        toplevel: true,
+        properties: false,
+      },
+      format: {
+        comments: false,
+      },
+    },
+    rollupOptions: {
+      output: {
+        // [SECURITY] Nomes de chunks sem pistas sobre a estrutura interna
+        chunkFileNames: 'assets/[hash].js',
+        assetFileNames: 'assets/[hash][extname]',
+        entryFileNames: 'assets/[hash].js',
+        // Fragmenta o bundle dificultando análise completa
+        manualChunks: undefined,
+      },
+    },
+  },
 })

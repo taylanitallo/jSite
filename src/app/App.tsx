@@ -280,6 +280,7 @@ export default function App() {
   const [confirmDelete, setConfirmDelete] = useState<{ label: string; onConfirm: () => void } | null>(null);
   const [editBuffer, setEditBuffer] = useState<Record<string, any> | null>(null);
   const [openIconPicker, setOpenIconPicker] = useState<string | null>(null);
+  const [blogSearch, setBlogSearch] = useState("");
   const [clientSearch, setClientSearch] = useState("");
   const [clientEstado, setClientEstado] = useState("");
   const [depSearch, setDepSearch] = useState("");
@@ -468,9 +469,23 @@ export default function App() {
     ));
   };
 
+  // [SECURITY] Sanitização Anti-XSS: remove tags HTML e caracteres de injeção de inputs
+  const sanitizeInput = (value: string): string => {
+    return value
+      .replace(/[<>"'`]/g, '')           // Remove caracteres HTML perigosos
+      .replace(/javascript:/gi, '')       // Bloqueia javascript: URIs
+      .replace(/on\w+\s*=/gi, '')         // Remove event handlers inline
+      .replace(/[\x00-\x1F\x7F]/g, '')   // Remove caracteres de controle
+      .trim()
+      .slice(0, 200);                     // Limita tamanho máximo do input
+  };
+
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    const user = clientUsers.find(u => u.login === loginEmail && u.senha === loginPassword);
+    // [SECURITY] Sanitiza inputs antes de qualquer processamento
+    const safeEmail    = sanitizeInput(loginEmail);
+    const safePassword = sanitizeInput(loginPassword);
+    const user = clientUsers.find(u => u.login === safeEmail && u.senha === safePassword);
     if (user) {
       const ent = entidades.find(e => e.id === user.entidadeId);
       if (ent && !ent.ativo) {
@@ -499,6 +514,30 @@ export default function App() {
     setShowUserMenu(false);
     setCurrentModal(null);
   };
+
+  // [SECURITY] Kill-switch de inatividade: logout automático após 300s sem interação
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    const TIMEOUT_MS = 300_000; // 5 minutos
+    let timer: ReturnType<typeof setTimeout>;
+    const reset = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        // Limpa sessão e redireciona para tela inicial
+        setIsLoggedIn(false);
+        setLoggedInUser(null);
+        setCurrentModal(null);
+        try { localStorage.removeItem("jeosSessionToken"); } catch (_) {}
+      }, TIMEOUT_MS);
+    };
+    const events: (keyof WindowEventMap)[] = ['mousemove', 'keydown', 'touchstart', 'scroll', 'click'];
+    events.forEach(ev => window.addEventListener(ev, reset, { passive: true }));
+    reset(); // inicia o timer imediatamente
+    return () => {
+      clearTimeout(timer);
+      events.forEach(ev => window.removeEventListener(ev, reset));
+    };
+  }, [isLoggedIn]);
 
   const handleAdminLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -2183,11 +2222,11 @@ export default function App() {
                             onChange={e => {
                               const v = e.target.value;
                               setNovoRelatorioForm(p => ({...p, tipo: v}));
-                              if (v.trim()) setSisSugestoes(selSecretaria.sistemasContratados.map((s: any) => s.nome).filter((n: string) => n.toLowerCase().includes(v.toLowerCase())));
-                              else setSisSugestoes(selSecretaria.sistemasContratados.map((s: any) => s.nome));
+                              if (v.trim()) setSisSugestoes((selSecretaria?.sistemasContratados ?? []).map((s: any) => s.nome).filter((n: string) => n.toLowerCase().includes(v.toLowerCase())));
+                              else setSisSugestoes((selSecretaria?.sistemasContratados ?? []).map((s: any) => s.nome));
                             }}
                             onFocus={() => {
-                              setSisSugestoes(selSecretaria.sistemasContratados.map((s: any) => s.nome));
+                              setSisSugestoes((selSecretaria?.sistemasContratados ?? []).map((s: any) => s.nome));
                             }}
                             onBlur={() => setTimeout(() => setSisSugestoes([]), 150)}
                             className={inputClass} placeholder="Digite para buscar sistema..." />
@@ -2270,9 +2309,11 @@ export default function App() {
                       <h2 className={`text-lg font-bold mb-5 ${isDarkMode ? "text-white" : "text-slate-900"}`}>{editUserForm ? "Editar Usuário" : "Novo Usuário"}</h2>
                       {(() => {
                         const form = editUserForm ?? novoUserForm;
+                        type FormShape = typeof novoUserForm;
                         const setForm = editUserForm
-                          ? (fn: (p: typeof novoUserForm) => typeof novoUserForm) => setEditUserForm(prev => prev ? { ...fn(prev), id: prev.id } : null)
-                          : (fn: (p: typeof novoUserForm) => typeof novoUserForm) => setNovoUserForm(fn);
+                          ? (fn: (p: FormShape) => FormShape) => setEditUserForm(prev => prev ? { ...fn({ ...prev, cargo: prev.cargo ?? "", telefone: prev.telefone ?? "", foto: prev.foto ?? "" }), id: prev.id } : null)
+                          : (fn: (p: FormShape) => FormShape) => setNovoUserForm(fn);
+                        const formNorm: FormShape = { ...novoUserForm, ...form, cargo: form.cargo ?? "", telefone: form.telefone ?? "", foto: form.foto ?? "" };
                         return (
                           <div className="space-y-4">
                             {/* Avatar / Foto */}
@@ -2440,18 +2481,18 @@ export default function App() {
               <img src={isDarkMode ? logoJeosBranca : logoJeosColorida} alt="JEOS" className="h-12 w-auto" />
               <span className="text-xs font-bold px-2 py-1 rounded bg-gradient-to-r from-orange-500 to-red-600 text-white tracking-wider">ADMIN</span>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <Button variant="outline" size="sm" onClick={() => setIsDarkMode(!isDarkMode)}
-                className={isDarkMode ? "border-purple-500/50 text-purple-400 hover:bg-purple-500/10" : "border-purple-500 text-purple-600 hover:bg-purple-50"}>
+                className={isDarkMode ? "border-purple-500/50 text-purple-400 hover:bg-purple-500/10 px-2" : "border-purple-500 text-purple-600 hover:bg-purple-50 px-2"}>
                 {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
               </Button>
               <Button variant="outline" size="sm" onClick={() => setAdminLanding(true)}
                 className={isDarkMode ? "border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/10" : "border-cyan-500 text-cyan-600 hover:bg-cyan-50"}>
-                <ArrowLeft className="w-4 h-4 mr-2" />Voltar
+                <ArrowLeft className="w-4 h-4" /><span className="hidden sm:inline ml-1.5">Voltar</span>
               </Button>
               <Button variant="outline" size="sm" onClick={handleAdminLogout}
                 className={isDarkMode ? "border-red-500/50 text-red-400 hover:bg-red-500/10" : "border-red-500 text-red-600 hover:bg-red-50"}>
-                <LogOut className="w-4 h-4 mr-2" />Sair
+                <LogOut className="w-4 h-4" /><span className="hidden sm:inline ml-1.5">Sair</span>
               </Button>
             </div>
           </div>
@@ -2464,7 +2505,7 @@ export default function App() {
           )}
           {/* Sidebar */}
           <aside className={`fixed top-0 left-0 h-full w-64 z-40 flex flex-col flex-shrink-0 overflow-y-auto p-4 transition-transform duration-300
-            md:sticky md:top-0 md:translate-x-0 md:z-auto md:h-screen md:self-start
+            md:sticky md:top-[73px] md:translate-x-0 md:z-auto md:h-[calc(100vh-73px)] md:self-start
             ${adminSidebarOpen ? "translate-x-0" : "-translate-x-full"}
             ${isDarkMode ? "bg-slate-900 border-r border-purple-500/20" : "bg-white border-r border-gray-200 shadow-sm"}
           `}>
@@ -2771,12 +2812,12 @@ export default function App() {
             )}
             {adminSection === "stats" && (
               <div>
-                <div className="flex items-center justify-between mb-8">
-                  <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-400">Estatísticas</h1>
-                  <div className="flex gap-3">
-                    <Button onClick={() => { setNovaStatForm({ valor: "", desc: "", icone: "Award" }); setShowAddStatModal(true); }} className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700">+ Adicionar</Button>
-                    <Button onClick={saveContent} className={savedFeedback ? "bg-green-600 hover:bg-green-700" : "bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"}>
-                      <CheckCircle2 className="w-4 h-4 mr-2" /> {savedFeedback ? "Salvo com sucesso!" : "Salvar Alterações"}
+                <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+                  <h1 className="text-2xl sm:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-400">Estatísticas</h1>
+                  <div className="flex gap-2">
+                    <Button size="sm" onClick={() => { setNovaStatForm({ valor: "", desc: "", icone: "Award" }); setShowAddStatModal(true); }} className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700">+ Adicionar</Button>
+                    <Button size="sm" onClick={saveContent} className={savedFeedback ? "bg-green-600 hover:bg-green-700" : "bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"}>
+                      <CheckCircle2 className="w-4 h-4 mr-1" /> {savedFeedback ? "Salvo!" : "Salvar"}
                     </Button>
                   </div>
                 </div>
@@ -3072,18 +3113,35 @@ export default function App() {
             {/* Blog */}
             {adminSection === "blog" && (
               <div>
-                <div className="flex items-center justify-between mb-8">
-                  <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-400">Blog</h1>
-                  <div className="flex gap-3">
-                    <Button onClick={() => { setShowAddPostModal(true); setEditPostIdx(null); setNovoPostForm({ titulo: "", resumo: "", conteudo: "", imagem: "", autor: "Equipe JEOS", data: new Date().toISOString().split("T")[0], categoria: "" }); }}
+                <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+                  <h1 className="text-2xl sm:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-400">Blog</h1>
+                  <div className="flex gap-2">
+                    <Button size="sm" onClick={() => { setShowAddPostModal(true); setEditPostIdx(null); setNovoPostForm({ titulo: "", resumo: "", conteudo: "", imagem: "", autor: "Equipe JEOS", data: new Date().toISOString().split("T")[0], categoria: "" }); }}
                       className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700">
                       + Novo Post
                     </Button>
-                    <Button onClick={saveContent} className={savedFeedback ? "bg-green-600 hover:bg-green-700" : "bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"}>
-                      <CheckCircle2 className="w-4 h-4 mr-2" /> {savedFeedback ? "Salvo com sucesso!" : "Salvar Alterações"}
+                    <Button size="sm" onClick={saveContent} className={savedFeedback ? "bg-green-600 hover:bg-green-700" : "bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"}>
+                      <CheckCircle2 className="w-4 h-4 mr-1" /> {savedFeedback ? "Salvo!" : "Salvar"}
                     </Button>
                   </div>
                 </div>
+                {/* Busca */}
+                <div className="flex flex-wrap items-center gap-2 mb-6">
+                  <input
+                    type="text"
+                    placeholder="🔍 Pesquisar por título, categoria, autor..."
+                    value={blogSearch}
+                    onChange={e => setBlogSearch(e.target.value)}
+                    className={`flex-1 min-w-0 px-4 py-2 rounded-lg border text-sm ${isDarkMode ? "bg-slate-800 border-purple-500/30 text-white placeholder-gray-500" : "bg-white border-gray-300 text-slate-900 placeholder-gray-400"}`}
+                  />
+                  {blogSearch && (
+                    <button onClick={() => setBlogSearch("")} className="px-3 py-2 rounded-lg text-sm text-gray-400 hover:text-white border border-gray-600 hover:border-gray-400 transition">× Limpar</button>
+                  )}
+                  <span className={`text-xs ${isDarkMode ? "text-gray-500" : "text-gray-400"}`}>
+                    {blogPosts.filter(p => !blogSearch || p.titulo.toLowerCase().includes(blogSearch.toLowerCase()) || (p.categoria||'').toLowerCase().includes(blogSearch.toLowerCase()) || p.autor.toLowerCase().includes(blogSearch.toLowerCase())).length} de {blogPosts.length}
+                  </span>
+                </div>
+
                 {blogPosts.length === 0 ? (
                   <Card className={isDarkMode ? "bg-slate-900/50 border-purple-500/20" : "bg-white border-gray-200 shadow-md"}>
                     <CardContent className="p-12 text-center">
@@ -3093,36 +3151,34 @@ export default function App() {
                   </Card>
                 ) : (
                   <div className="space-y-4">
-                    {blogPosts.map((post, i) => (
+                    {blogPosts.filter(p => !blogSearch || p.titulo.toLowerCase().includes(blogSearch.toLowerCase()) || (p.categoria||'').toLowerCase().includes(blogSearch.toLowerCase()) || p.autor.toLowerCase().includes(blogSearch.toLowerCase())).map((post, _fi) => {
+                    const i = blogPosts.indexOf(post);
+                    return (
                       <Card key={post.id} className={isDarkMode ? "bg-slate-900/50 border-purple-500/20" : "bg-white border-gray-200 shadow-md"}>
-                        <CardContent className="p-5">
-                          <div className="flex items-start gap-4">
+                        <CardContent className="p-4">
+                          <div className="flex items-start gap-3">
                             {post.imagem && (
-                              <img src={post.imagem} alt={post.titulo} className="w-20 h-16 object-cover rounded-lg flex-shrink-0" />
+                              <img src={post.imagem} alt={post.titulo} className="w-16 h-14 sm:w-20 sm:h-16 object-cover rounded-lg flex-shrink-0" />
                             )}
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between gap-4 flex-wrap">
-                                <div>
-                                  <p className={isDarkMode ? "text-white font-semibold" : "text-slate-900 font-semibold"}>{post.titulo}</p>
-                                  <p className="text-gray-500 text-xs mt-0.5">{post.categoria && <span className="mr-2 text-cyan-400">{post.categoria}</span>}{post.data} · {post.autor}</p>
-                                </div>
-                                <div className="flex gap-2 flex-shrink-0">
-                                  <Button size="sm" variant="outline" onClick={() => { setEditPostIdx(i); setNovoPostForm({ titulo: post.titulo, resumo: post.resumo, conteudo: post.conteudo, imagem: post.imagem, autor: post.autor, data: post.data, categoria: post.categoria }); setShowAddPostModal(true); }}
-                                    className={isDarkMode ? "border-purple-500/50 text-purple-400" : "border-purple-500 text-purple-600"}>
-                                    Editar ✎
-                                  </Button>
-                                  <Button size="sm" variant="outline" onClick={() => setConfirmDelete({ label: post.titulo, onConfirm: () => setBlogPosts(prev => prev.filter((_, idx) => idx !== i)) })}
-                                    className="border-red-500/50 text-red-400 hover:bg-red-500/10">
-                                    🗑 Excluir
-                                  </Button>
-                                </div>
+                              <p className={`font-semibold text-sm sm:text-base leading-snug ${isDarkMode ? "text-white" : "text-slate-900"}`}>{post.titulo}</p>
+                              <p className="text-gray-500 text-xs mt-0.5">{post.categoria && <span className="mr-2 text-cyan-400">{post.categoria}</span>}{post.data} · {post.autor}</p>
+                              <div className="flex gap-2 mt-2">
+                                <Button size="sm" variant="outline" onClick={() => { setEditPostIdx(i); setNovoPostForm({ titulo: post.titulo, resumo: post.resumo, conteudo: post.conteudo, imagem: post.imagem, autor: post.autor, data: post.data, categoria: post.categoria }); setShowAddPostModal(true); }}
+                                  className={isDarkMode ? "border-purple-500/50 text-purple-400 px-2.5" : "border-purple-500 text-purple-600 px-2.5"}>
+                                  Editar ✎
+                                </Button>
+                                <Button size="sm" variant="outline" onClick={() => setConfirmDelete({ label: post.titulo, onConfirm: () => setBlogPosts(prev => prev.filter((_, idx) => idx !== i)) })}
+                                  className="border-red-500/50 text-red-400 hover:bg-red-500/10 px-2.5">
+                                  🗑 Excluir
+                                </Button>
                               </div>
-                              <p className={`text-sm mt-2 line-clamp-2 ${isDarkMode ? "text-gray-400" : "text-gray-600"}`}>{post.resumo}</p>
+                              <p className={`text-xs mt-1.5 line-clamp-2 ${isDarkMode ? "text-gray-400" : "text-gray-600"}`}>{post.resumo}</p>
                             </div>
                           </div>
                         </CardContent>
                       </Card>
-                    ))}
+                    ); })}
                   </div>
                 )}
 
@@ -3200,17 +3256,17 @@ export default function App() {
             {/* Soluções */}
             {adminSection === "solucoes" && (
               <div>
-                <div className="flex items-center justify-between mb-8">
-                  <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-400">Soluções</h1>
-                  <div className="flex gap-3">
-                    <Button onClick={() => {
+                <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+                  <h1 className="text-2xl sm:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-400">Soluções</h1>
+                  <div className="flex gap-2">
+                    <Button size="sm" onClick={() => {
                       setNovaSolucaoForm({ title: "", description: "", image: "", url: "", features: "", icone: "Package" });
                       setShowAddSolucaoModal(true);
                     }} className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700">
                       + Adicionar
                     </Button>
-                    <Button onClick={saveContent} className={savedFeedback ? "bg-green-600 hover:bg-green-700" : "bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"}>
-                      <CheckCircle2 className="w-4 h-4 mr-2" /> {savedFeedback ? "Salvo com sucesso!" : "Salvar Alterações"}
+                    <Button size="sm" onClick={saveContent} className={savedFeedback ? "bg-green-600 hover:bg-green-700" : "bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"}>
+                      <CheckCircle2 className="w-4 h-4 mr-1" /> {savedFeedback ? "Salvo!" : "Salvar"}
                     </Button>
                   </div>
                 </div>
@@ -3311,20 +3367,20 @@ export default function App() {
             {/* Clientes */}
             {adminSection === "clientes" && (
               <div>
-                <div className="flex items-center justify-between mb-5">
-                  <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-400">Clientes</h1>
-                  <div className="flex gap-3">
-                    <Button onClick={() => { setNovoClienteForm({ name: "", estado: "", logo: "" }); setShowAddClienteModal(true); }} className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700">
+                <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
+                  <h1 className="text-2xl sm:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-400">Clientes</h1>
+                  <div className="flex gap-2">
+                    <Button size="sm" onClick={() => { setNovoClienteForm({ name: "", estado: "", logo: "" }); setShowAddClienteModal(true); }} className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700">
                       + Adicionar
                     </Button>
-                    <Button onClick={saveContent} className={savedFeedback ? "bg-green-600 hover:bg-green-700" : "bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"}>
-                      <CheckCircle2 className="w-4 h-4 mr-2" /> {savedFeedback ? "Salvo!" : "Salvar"}
+                    <Button size="sm" onClick={saveContent} className={savedFeedback ? "bg-green-600 hover:bg-green-700" : "bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"}>
+                      <CheckCircle2 className="w-4 h-4 mr-1" /> {savedFeedback ? "Salvo!" : "Salvar"}
                     </Button>
                   </div>
                 </div>
                 {/* Barra de pesquisa e filtro */}
-                <div className="flex flex-wrap gap-3 mb-6">
-                  <div className="relative flex-1 min-w-48">
+                <div className="flex flex-wrap gap-2 mb-6">
+                  <div className="relative flex-1 min-w-0" style={{minWidth: "160px"}}>
                     <input
                       type="text"
                       placeholder="🔍 Pesquisar cliente..."
@@ -3336,7 +3392,7 @@ export default function App() {
                   <select
                     value={clientEstado}
                     onChange={e => setClientEstado(e.target.value)}
-                    className={`px-3 py-2 rounded-lg border text-sm ${isDarkMode ? "bg-slate-800 border-purple-500/30 text-white" : "bg-white border-gray-300 text-slate-900"}`}
+                    className={`px-3 py-2 rounded-lg border text-sm max-w-[180px] ${isDarkMode ? "bg-slate-800 border-purple-500/30 text-white" : "bg-white border-gray-300 text-slate-900"}`}
                   >
                     <option value="">Todos os municípios</option>
                     {["Abaiara","Acaraú","Acopiara","Aiuaba","Alcântaras","Altaneira","Alto Santo","Amontada","Antonina do Norte","Apuiarés","Aquiraz","Aracati","Aracoiaba","Ararендá","Araripe","Aratuba","Arneiroz","Assaré","Aurora","Baixio","Banabuiú","Barbalha","Barreira","Barro","Barroquinha","Baturité","Beberibe","Bela Cruz","Boa Viagem","Brejo Santo","Camocim","Campos Sales","Canindé","Capistrano","Caridade","Caririaçu","Caririaçu","Cariús","Carnaubal","Cascavel","Catarina","Catunda","Caucaia","Cedro","Chaval","Choró","Chorozinho","Coreaú","Crateús","Crato","Croatá","Cruz","Deputado Irapuan Pinheiro","Ererê","Eusébio","Farias Brito","Forquilha","Fortaleza","Fortim","Frecheirinha","General Sampaio","Graça","Granja","Granjeiro","Groaíras","Guaiuba","Guaraciaba do Norte","Guaramiranga","Hidrolândia","Horizonte","Ibaretama","Ibiapina","Ibicuitinga","Icapuí","Icó","Iguatu","Independência","Ipaporanga","Ipaumirim","Ipu","Ipueiras","Iracema","Irauçuba","Itaiçaba","Itaitinga","Itapajé","Itapipoca","Itapiúna","Itarema","Itatira","Jaguaretama","Jaguaribara","Jaguaribe","Jaguaruana","Jardim","Jati","Jijoca de Jericoacoara","Juazeiro do Norte","Jucás","Lavras da Mangabeira","Limoeiro do Norte","Madalena","Maracanaú","Maranguape","Marco","Martinópole","Massapê","Mauriti","Meruoca","Milagres","Milhã","Miraíma","Missão Velha","Mombaça","Monsenhor Tabosa","Morada Nova","Moraújo","Morrinhos","Mucambo","Mulungu","Nova Olinda","Nova Russas","Novo Oriente","Ocara","Orós","Pacajus","Pacatuba","Pacoti","Pacujá","Palhano","Palmácia","Paracuru","Paraipaba","Parambu","Paramoti","Pedra Branca","Penaforte","Pentecoste","Pereiro","Pindoretama","Piquet Carneiro","Pires Ferreira","Poranga","Porteiras","Potengi","Potiretama","Quiterianópolis","Quixadá","Quixelô","Quixeramobim","Quixeré","Redenção","Reriutaba","Russas","Saboeiro","Salitre","Santa Quitéria","Santana do Acaraú","Santana do Cariri","São Benedito","São Gonçalo do Amarante","São João do Jaguaribe","São Luís do Curu","Senador Pompeu","Senador Sá","Sobral","Solonópole","Tabuleiro do Norte","Tamboril","Tarrafas","Tauá","Tejuçoca","Tianguá","Trairi","Tururu","Ubajara","Umirim","Uruburetama","Uruoca","Varjota","Várzea Alegre","Viçosa do Ceará"].map(m => (
@@ -3405,20 +3461,20 @@ export default function App() {
             {/* Depoimentos */}
             {adminSection === "depoimentos" && (
               <div>
-                <div className="flex items-center justify-between mb-8">
-                  <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-400">Depoimentos</h1>
-                  <div className="flex gap-3">
-                    <Button onClick={() => { setNovoDepoimentoForm({ name: "", role: "", city: "", testimonial: "", photo: "" }); setShowAddDepoimentoModal(true); }} className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700">
+                <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+                  <h1 className="text-2xl sm:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-400">Depoimentos</h1>
+                  <div className="flex gap-2">
+                    <Button size="sm" onClick={() => { setNovoDepoimentoForm({ name: "", role: "", city: "", testimonial: "", photo: "" }); setShowAddDepoimentoModal(true); }} className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700">
                       + Adicionar
                     </Button>
-                    <Button onClick={saveContent} className={savedFeedback ? "bg-green-600 hover:bg-green-700" : "bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"}>
-                      <CheckCircle2 className="w-4 h-4 mr-2" /> {savedFeedback ? "Salvo!" : "Salvar"}
+                    <Button size="sm" onClick={saveContent} className={savedFeedback ? "bg-green-600 hover:bg-green-700" : "bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"}>
+                      <CheckCircle2 className="w-4 h-4 mr-1" /> {savedFeedback ? "Salvo!" : "Salvar"}
                     </Button>
                   </div>
                 </div>
                 {/* Barra de pesquisa e filtro */}
-                <div className="flex flex-wrap gap-3 mb-6">
-                  <div className="relative flex-1 min-w-48">
+                <div className="flex flex-wrap gap-2 mb-6">
+                  <div className="relative flex-1 min-w-0" style={{minWidth: "160px"}}>
                     <input
                       type="text"
                       placeholder="🔍 Pesquisar depoimento..."
@@ -3430,7 +3486,7 @@ export default function App() {
                   <select
                     value={depCliente}
                     onChange={e => setDepCliente(e.target.value)}
-                    className={`px-3 py-2 rounded-lg border text-sm ${isDarkMode ? "bg-slate-800 border-purple-500/30 text-white" : "bg-white border-gray-300 text-slate-900"}`}
+                    className={`px-3 py-2 rounded-lg border text-sm max-w-[180px] ${isDarkMode ? "bg-slate-800 border-purple-500/30 text-white" : "bg-white border-gray-300 text-slate-900"}`}
                   >
                     <option value="">Todos os órgãos</option>
                     {clientes.map((c, ci) => (
@@ -3512,14 +3568,14 @@ export default function App() {
             {/* Certidões */}
             {adminSection === "certidoes" && (
               <div>
-                <div className="flex items-center justify-between mb-8">
-                  <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-400">Certidões</h1>
-                  <div className="flex gap-3">
-                    <Button onClick={() => { setNovaCertidaoForm({ titulo: "", tipo: "", validade: "", dataEmissao: "", arquivo: "" }); setCertidaoModoVersao(false); setShowAddCertidaoModal(true); }} className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700">
+                <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+                  <h1 className="text-2xl sm:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-400">Certidões</h1>
+                  <div className="flex gap-2">
+                    <Button size="sm" onClick={() => { setNovaCertidaoForm({ titulo: "", tipo: "", validade: "", dataEmissao: "", arquivo: "" }); setCertidaoModoVersao(false); setShowAddCertidaoModal(true); }} className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700">
                       + Adicionar
                     </Button>
-                    <Button onClick={saveContent} className={savedFeedback ? "bg-green-600 hover:bg-green-700" : "bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"}>
-                      <CheckCircle2 className="w-4 h-4 mr-2" /> {savedFeedback ? "Salvo!" : "Salvar"}
+                    <Button size="sm" onClick={saveContent} className={savedFeedback ? "bg-green-600 hover:bg-green-700" : "bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"}>
+                      <CheckCircle2 className="w-4 h-4 mr-1" /> {savedFeedback ? "Salvo!" : "Salvar"}
                     </Button>
                   </div>
                 </div>
@@ -5251,16 +5307,16 @@ export default function App() {
       {savedStats.filter(s => s.ativo).length > 0 && (
       <section className={isDarkMode ? "py-8 bg-slate-900/30" : "py-8 bg-gray-50"}>
         <div className="container mx-auto px-4">
-          <div className={`grid gap-8`} style={{gridTemplateColumns: `repeat(${Math.min(savedStats.filter(s => s.ativo).length || 1, 4)}, 1fr)`}}>
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-6">
             {savedStats.filter(s => s.ativo).map((stat, i) => {
               const IC = solucaoIconPickerMap[stat.icone ?? "Award"] ?? Award;
               return (
                 <div key={i} className="text-center animate-fade-in-up" style={{animationDelay: `${i * 0.1}s`}}>
-                  <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-r from-purple-600 to-cyan-600 rounded-full flex items-center justify-center animate-float" style={{animationDelay: `${i * 0.4}s`}}>
-                    <IC className="w-8 h-8 text-white" />
+                  <div className="w-14 h-14 md:w-16 md:h-16 mx-auto mb-3 bg-gradient-to-r from-purple-600 to-cyan-600 rounded-full flex items-center justify-center animate-float" style={{animationDelay: `${i * 0.4}s`}}>
+                    <IC className="w-7 h-7 md:w-8 md:h-8 text-white" />
                   </div>
-                  <h3 className={isDarkMode ? "text-cyan-400 mb-2" : "text-purple-600 mb-2"}>{stat.valor}</h3>
-                  <p className={isDarkMode ? "text-gray-400 text-sm" : "text-gray-600 text-sm"}>{stat.desc}</p>
+                  <h3 className={`text-base md:text-lg font-bold ${isDarkMode ? "text-cyan-400 mb-1" : "text-purple-600 mb-1"}`}>{stat.valor}</h3>
+                  <p className={`text-xs md:text-sm ${isDarkMode ? "text-gray-400" : "text-gray-600"}`}>{stat.desc}</p>
                 </div>
               );
             })}

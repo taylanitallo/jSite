@@ -1,7 +1,7 @@
 
-  # SITE JEOS SISTEMAS
+  # JEOS SISTEMAS
 
-  This is a code bundle for SITE JEOS SISTEMAS. The original project is available at https://www.figma.com/design/fJJrhDUMmplFihESF4ISQ1/SITE-JEOS-SISTEMAS.
+  This is a code bundle for JEOS SISTEMAS. The original project is available at https://www.figma.com/design/fJJrhDUMmplFihESF4ISQ1/SITE-JEOS-SISTEMAS.
 
   ## Running the code
 
