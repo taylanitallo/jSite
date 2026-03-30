@@ -889,28 +889,26 @@ export default function App() {
       const selEntidade = entidades.find(e => e.id === adminSelEntidadeId) ?? null;
       const selSecretaria = selEntidade?.secretarias.find(s => s.id === adminSelSecretariaId) ?? null;
       const updSec = (fn: (s: SecretariaData) => SecretariaData) => {
-        if (adminSelEntidadeId && adminSelSecretariaId) updateSecretaria(adminSelEntidadeId, adminSelSecretariaId, fn);
+        if (adminSelEntidadeId && adminSelSecretariaId) {
+          updateSecretaria(adminSelEntidadeId, adminSelSecretariaId, fn);
+          setTimeout(() => persistSec().catch(console.error), 100);
+        }
+      };
+      const persistSec = async () => {
+        const ent = entidades.find(e => e.id === adminSelEntidadeId);
+        const sec = ent?.secretarias.find(s => s.id === adminSelSecretariaId);
+        if (!ent || !sec) return;
+        await upsertSecretaria(ent.id, sec);
+        for (const ct of sec.contratos ?? []) {
+          await upsertContrato(sec.id, ct);
+          for (const ad of ct.aditivos ?? []) await upsertAditivo(ct.id, ad);
+        }
+        await upsertNotasFiscais(sec.id, sec.notasFiscais ?? []);
+        await upsertRelatorios(sec.id, sec.relatorios ?? []);
+        await upsertSistemas(sec.id, sec.sistemasContratados ?? []);
       };
       const saveTodo = async () => {
-        try {
-          const ent = entidades.find(e => e.id === adminSelEntidadeId);
-          if (ent) {
-            await upsertEntidade(ent);
-            for (const sec of ent.secretarias) {
-              await upsertSecretaria(ent.id, sec);
-              for (const ct of sec.contratos ?? []) {
-                await upsertContrato(sec.id, ct);
-                for (const ad of ct.aditivos ?? []) {
-                  await upsertAditivo(ct.id, ad);
-                }
-              }
-              await upsertNotasFiscais(sec.id, sec.notasFiscais ?? []);
-              await upsertRelatorios(sec.id, sec.relatorios ?? []);
-              await upsertSistemas(sec.id, sec.sistemasContratados ?? []);
-            }
-          }
-          for (const u of clientUsers) { await updateClientUser(u); }
-        } catch(e) { console.error(e); }
+        try { await persistSec(); } catch(e) { console.error(e); }
         setSavedFeedback(true); setTimeout(() => setSavedFeedback(false), 2500);
       };
       return (
@@ -1026,7 +1024,7 @@ export default function App() {
                           </div>
                           <div className="flex items-center gap-1">
                             <button title={ent.ativo !== false ? "Desativar" : "Ativar"}
-                              onClick={e => { e.stopPropagation(); setEntidades(prev => prev.map(x => x.id === ent.id ? { ...x, ativo: !(x.ativo !== false) } : x)); }}
+                              onClick={e => { e.stopPropagation(); const novoAtivo = !(ent.ativo !== false); setEntidades(prev => prev.map(x => x.id === ent.id ? { ...x, ativo: novoAtivo } : x)); upsertEntidade({ ...ent, ativo: novoAtivo }).catch(console.error); }}
                               className={`p-2 rounded-lg transition ${ent.ativo !== false ? (isDarkMode ? "text-green-400 hover:bg-green-500/10" : "text-green-600 hover:bg-green-50") : (isDarkMode ? "text-gray-500 hover:bg-gray-700" : "text-gray-400 hover:bg-gray-100")}`}>
                               <Power className="w-4 h-4" />
                             </button>
@@ -1036,7 +1034,7 @@ export default function App() {
                               <Pencil className="w-4 h-4" />
                             </button>
                             <button title="Excluir"
-                              onClick={e => { e.stopPropagation(); setConfirmDelete({ label: ent.nome, onConfirm: () => setEntidades(prev => prev.filter(x => x.id !== ent.id)) }); }}
+                              onClick={e => { e.stopPropagation(); setConfirmDelete({ label: ent.nome, onConfirm: () => { setEntidades(prev => prev.filter(x => x.id !== ent.id)); deleteEntidade(ent.id).catch(console.error); } }); }}
                               className={`p-2 rounded-lg transition ${isDarkMode ? "text-red-400 hover:bg-red-500/10" : "text-red-500 hover:bg-red-50"}`}>
                               <span className="text-base">🗑</span>
                             </button>
@@ -1110,7 +1108,7 @@ export default function App() {
                             </div>
                             <div className="flex items-center gap-1">
                               <button title={sec.ativo !== false ? "Desativar" : "Ativar"}
-                                onClick={e => { e.stopPropagation(); setEntidades(prev => prev.map(ent => ent.id === adminSelEntidadeId ? { ...ent, secretarias: ent.secretarias.map(s => s.id === sec.id ? { ...s, ativo: !(s.ativo !== false) } : s) } : ent)); }}
+                                onClick={e => { e.stopPropagation(); const novoAtivo = !(sec.ativo !== false); setEntidades(prev => prev.map(ent => ent.id === adminSelEntidadeId ? { ...ent, secretarias: ent.secretarias.map(s => s.id === sec.id ? { ...s, ativo: novoAtivo } : s) } : ent)); if (adminSelEntidadeId) upsertSecretaria(adminSelEntidadeId, { ...sec, ativo: novoAtivo }).catch(console.error); }}
                                 className={`p-2 rounded-lg transition ${sec.ativo !== false ? (isDarkMode ? "text-green-400 hover:bg-green-500/10" : "text-green-600 hover:bg-green-50") : (isDarkMode ? "text-gray-500 hover:bg-gray-700" : "text-gray-400 hover:bg-gray-100")}`}>
                                 <Power className="w-4 h-4" />
                               </button>
@@ -1120,7 +1118,7 @@ export default function App() {
                                 <Pencil className="w-4 h-4" />
                               </button>
                               <button title="Excluir"
-                                onClick={e => { e.stopPropagation(); setConfirmDelete({ label: sec.nome, onConfirm: () => setEntidades(prev => prev.map(ent => ent.id === adminSelEntidadeId ? { ...ent, secretarias: ent.secretarias.filter(s => s.id !== sec.id) } : ent)) }); }}
+                                onClick={e => { e.stopPropagation(); setConfirmDelete({ label: sec.nome, onConfirm: () => { setEntidades(prev => prev.map(ent => ent.id === adminSelEntidadeId ? { ...ent, secretarias: ent.secretarias.filter(s => s.id !== sec.id) } : ent)); deleteSecretaria(sec.id).catch(console.error); } }); }}
                                 className={`p-2 rounded-lg transition ${isDarkMode ? "text-red-400 hover:bg-red-500/10" : "text-red-500 hover:bg-red-50"}`}>
                                 <span className="text-base">🗑</span>
                               </button>
@@ -2062,7 +2060,7 @@ export default function App() {
                       </div>
                       <div className="flex justify-end gap-3">
                         <Button variant="outline" onClick={() => { setShowAddModal(null); setNovaEntidadeForm({ nome: "", tipo: "", cidade: "", responsavel: "", cnpj: "", telefone: "" }); setEditEntidadeId(null); }} className={isDarkMode ? "border-gray-500 text-black" : "border-gray-400 text-black"}>Cancelar</Button>
-                        <Button onClick={() => { if (!novaEntidadeForm.nome.trim()) return; if (editEntidadeId) { setEntidades(prev => prev.map(e => e.id === editEntidadeId ? { ...e, nome: novaEntidadeForm.nome.trim().toUpperCase(), tipo: novaEntidadeForm.tipo.trim(), cidade: novaEntidadeForm.cidade.trim(), responsavel: novaEntidadeForm.responsavel.trim(), cnpj: novaEntidadeForm.cnpj.trim(), telefone: novaEntidadeForm.telefone.trim() } : e)); } else { const id = `ent_${Date.now()}`; setEntidades(prev => [...prev, { id, nome: novaEntidadeForm.nome.trim().toUpperCase(), tipo: novaEntidadeForm.tipo.trim(), cidade: novaEntidadeForm.cidade.trim(), responsavel: novaEntidadeForm.responsavel.trim(), cnpj: novaEntidadeForm.cnpj.trim(), telefone: novaEntidadeForm.telefone.trim(), ativo: true, secretarias: [] }]); } setNovaEntidadeForm({ nome: "", tipo: "", cidade: "", responsavel: "", cnpj: "", telefone: "" }); setEditEntidadeId(null); setShowAddModal(null); }} className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700">{editEntidadeId ? "Salvar" : "Adicionar"}</Button>
+                        <Button onClick={async () => { if (!novaEntidadeForm.nome.trim()) return; if (editEntidadeId) { const updated = { id: editEntidadeId, nome: novaEntidadeForm.nome.trim().toUpperCase(), tipo: novaEntidadeForm.tipo.trim(), cidade: novaEntidadeForm.cidade.trim(), responsavel: novaEntidadeForm.responsavel.trim(), cnpj: novaEntidadeForm.cnpj.trim(), telefone: novaEntidadeForm.telefone.trim(), ativo: true, secretarias: entidades.find(e => e.id === editEntidadeId)?.secretarias ?? [] }; setEntidades(prev => prev.map(e => e.id === editEntidadeId ? updated : e)); await upsertEntidade(updated); } else { const id = `ent_${Date.now()}`; const nova = { id, nome: novaEntidadeForm.nome.trim().toUpperCase(), tipo: novaEntidadeForm.tipo.trim(), cidade: novaEntidadeForm.cidade.trim(), responsavel: novaEntidadeForm.responsavel.trim(), cnpj: novaEntidadeForm.cnpj.trim(), telefone: novaEntidadeForm.telefone.trim(), ativo: true, secretarias: [] }; setEntidades(prev => [...prev, nova]); await upsertEntidade(nova); } setNovaEntidadeForm({ nome: "", tipo: "", cidade: "", responsavel: "", cnpj: "", telefone: "" }); setEditEntidadeId(null); setShowAddModal(null); }} className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700">{editEntidadeId ? "Salvar" : "Adicionar"}</Button>
                       </div>
                     </div>
                   </div>
@@ -2093,7 +2091,7 @@ export default function App() {
                       </div>
                       <div className="flex justify-end gap-3">
                         <Button variant="outline" onClick={() => { setShowAddModal(null); setEditSecretariaId(null); setNovaSecretariaForm({ nome: "", secretario: "", telefone: "" }); }} className={isDarkMode ? "border-gray-500 text-black" : "border-gray-400 text-black"}>Cancelar</Button>
-                        <Button onClick={() => { if (!novaSecretariaForm.nome.trim()) return; if (editSecretariaId) { setEntidades(prev => prev.map(e => e.id === adminSelEntidadeId ? { ...e, secretarias: e.secretarias.map(s => s.id === editSecretariaId ? { ...s, nome: novaSecretariaForm.nome.trim(), responsavel: novaSecretariaForm.secretario.trim(), telefone: novaSecretariaForm.telefone.trim() } : s) } : e)); } else { const id = `sec_${Date.now()}`; const nova = emptySecretaria(id, novaSecretariaForm.nome.trim()); nova.responsavel = novaSecretariaForm.secretario.trim(); nova.telefone = novaSecretariaForm.telefone.trim(); setEntidades(prev => prev.map(e => e.id === adminSelEntidadeId ? { ...e, secretarias: [...e.secretarias, nova] } : e)); } setEditSecretariaId(null); setNovaSecretariaForm({ nome: "", secretario: "", telefone: "" }); setShowAddModal(null); }} className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700">{editSecretariaId ? "Salvar" : "Adicionar"}</Button>
+                        <Button onClick={async () => { if (!novaSecretariaForm.nome.trim()) return; if (editSecretariaId) { setEntidades(prev => prev.map(e => e.id === adminSelEntidadeId ? { ...e, secretarias: e.secretarias.map(s => s.id === editSecretariaId ? { ...s, nome: novaSecretariaForm.nome.trim(), responsavel: novaSecretariaForm.secretario.trim(), telefone: novaSecretariaForm.telefone.trim() } : s) } : e)); const sec = entidades.find(e => e.id === adminSelEntidadeId)?.secretarias.find(s => s.id === editSecretariaId); if (sec && adminSelEntidadeId) await upsertSecretaria(adminSelEntidadeId, { ...sec, nome: novaSecretariaForm.nome.trim(), responsavel: novaSecretariaForm.secretario.trim(), telefone: novaSecretariaForm.telefone.trim() }); } else { const id = `sec_${Date.now()}`; const nova = emptySecretaria(id, novaSecretariaForm.nome.trim()); nova.responsavel = novaSecretariaForm.secretario.trim(); nova.telefone = novaSecretariaForm.telefone.trim(); setEntidades(prev => prev.map(e => e.id === adminSelEntidadeId ? { ...e, secretarias: [...e.secretarias, nova] } : e)); if (adminSelEntidadeId) await upsertSecretaria(adminSelEntidadeId, nova); } setEditSecretariaId(null); setNovaSecretariaForm({ nome: "", secretario: "", telefone: "" }); setShowAddModal(null); }} className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700">{editSecretariaId ? "Salvar" : "Adicionar"}</Button>
                       </div>
                     </div>
                   </div>
