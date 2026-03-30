@@ -7,6 +7,17 @@ import logoJeosColorida from "../assets/logo-colorida.png";
 import logoJeosBranca from "../assets/logo-branca.png";
 import logoJeosPreta from "../assets/logo-colorida.png";
 import React, { useState, useEffect, useRef } from "react";
+import {
+  fetchEntidades, fetchClientUsers, fetchSiteContent, fetchSolucoes,
+  fetchStats, fetchClientes, fetchDepoimentos, fetchCertidoes, fetchBlogPosts,
+  saveSiteContent, saveSolucoes, saveStats, saveClientes, saveDepoimentos,
+  saveCertidoes, upsertBlogPost, deleteBlogPost,
+  upsertEntidade, deleteEntidade, upsertSecretaria, deleteSecretaria,
+  createClientUser, updateClientUser, deleteClientUser as dbDeleteClientUser,
+  upsertContrato, deleteContrato, upsertAditivo, deleteAditivo,
+  upsertNotasFiscais, upsertRelatorios, upsertSistemas,
+  authLogin, authLogout, fetchClientUserById,
+} from '../lib/db';
 
 const MUNICIPIOS_CE = ["Abaiara","Acaraú","Acopiara","Aiuaba","Alcântaras","Altaneira","Alto Santo","Amontada","Antonina do Norte","Apuiarés","Aquiraz","Aracati","Aracoiaba","Ararenda","Araripe","Aratuba","Arneiroz","Assaré","Aurora","Baixio","Banabuiú","Barbalha","Barreira","Barro","Barroquinha","Baturité","Beberibe","Bela Cruz","Boa Viagem","Brejo Santo","Camocim","Campos Sales","Canindé","Capistrano","Caridade","Caririaçu","Cariús","Carnaubal","Cascavel","Catarina","Catunda","Caucaia","Cedro","Chaval","Choró","Chorozinho","Coreaú","Crateús","Crato","Croatá","Cruz","Deputado Irapuan Pinheiro","Ererê","Eusébio","Farias Brito","Forquilha","Fortaleza","Fortim","Frecheirinha","General Sampaio","Graça","Granja","Granjeiro","Groaíras","Guaiúba","Guaraciaba do Norte","Guaramiranga","Hidrolândia","Horizonte","Ibaretama","Ibiapina","Ibicuitinga","Icapuí","Icó","Iguatu","Independência","Ipaporanga","Ipaumirim","Ipu","Ipueiras","Iracema","Irauçuba","Itaiçaba","Itaitinga","Itapajé","Itapipoca","Itapiúna","Itarema","Itatira","Jaguaretama","Jaguaribara","Jaguaribe","Jaguaruana","Jardim","Jati","Jijoca de Jericoacoara","Juazeiro do Norte","Jucás","Lavras da Mangabeira","Limoeiro do Norte","Madalena","Maracanaú","Maranguape","Marco","Martinópole","Massapê","Mauriti","Meruoca","Milagres","Milhã","Miraíma","Missão Velha","Mombaça","Monsenhor Tabosa","Morada Nova","Moraújo","Morrinhos","Mucambo","Mulungu","Nova Olinda","Nova Russas","Novo Oriente","Ocara","Orós","Pacajus","Pacatuba","Pacoti","Pacujá","Palhano","Palmácia","Paracuru","Paraipaba","Parambu","Paramoti","Pedra Branca","Penaforte","Pentecoste","Pereiro","Pindoretama","Piquet Carneiro","Pires Ferreira","Poranga","Porteiras","Potengi","Potiretama","Quiterianópolis","Quixadá","Quixelô","Quixeramobim","Quixeré","Redenção","Reriutaba","Russas","Saboeiro","Salitre","Santa Quitéria","Santana do Acaraú","Santana do Cariri","São Benedito","São Gonçalo do Amarante","São João do Jaguaribe","São Luís do Curu","Senador Pompeu","Senador Sá","Sobral","Solonópole","Tabuleiro do Norte","Tamboril","Tarrafas","Tauá","Tejuçoca","Tianguá","Trairi","Tururu","Ubajara","Umirim","Uruburetama","Uruoca","Varjota","Várzea Alegre","Viçosa do Ceará"];
 
@@ -203,9 +214,7 @@ export default function App() {
       categoria: "Eventos"
     }
   ];
-  const [blogPosts, setBlogPosts] = useState<Array<{id:string;titulo:string;resumo:string;conteudo:string;imagem:string;autor:string;data:string;categoria:string}>>(() => {
-    try { const s = localStorage.getItem("jeosBlogPosts"); return s ? JSON.parse(s) : defaultBlogPosts; } catch { return defaultBlogPosts; }
-  });
+  const [blogPosts, setBlogPosts] = useState<Array<{id:string;titulo:string;resumo:string;conteudo:string;imagem:string;autor:string;data:string;categoria:string}>>(defaultBlogPosts);
   const [showAddPostModal, setShowAddPostModal] = useState(false);
   const [novoPostForm, setNovoPostForm] = useState({ titulo: "", resumo: "", conteudo: "", imagem: "", autor: "Equipe JEOS", data: "", categoria: "" });
   const [editPostIdx, setEditPostIdx] = useState<number | null>(null);
@@ -249,24 +258,8 @@ export default function App() {
     stat4Icone: "Shield",
   };
 
-  const [siteContent, setSiteContent] = useState(() => {
-    try {
-      const saved = localStorage.getItem("jeosSiteContent");
-      // Garante que novos campos sempre tenham valores padrão,
-      // mesmo quando carregando dados salvos antes desses campos existirem
-      return saved ? { ...defaultSiteContent, ...JSON.parse(saved) } : defaultSiteContent;
-    } catch {
-      return defaultSiteContent;
-    }
-  });
-  const [savedSiteContent, setSavedSiteContent] = useState(() => {
-    try {
-      const saved = localStorage.getItem("jeosSiteContent");
-      return saved ? { ...defaultSiteContent, ...JSON.parse(saved) } : defaultSiteContent;
-    } catch {
-      return defaultSiteContent;
-    }
-  });
+  const [siteContent, setSiteContent] = useState(defaultSiteContent);
+  const [savedSiteContent, setSavedSiteContent] = useState(defaultSiteContent);
 
   const [adminEditIndex, setAdminEditIndex] = useState<number | null>(null);
   const [showAddSolucaoModal, setShowAddSolucaoModal] = useState(false);
@@ -298,7 +291,7 @@ export default function App() {
     { id: "tributacao", icone: "DollarSign", title: "Tributação Municipal", description: "Solução completa para arrecadação e fiscalização tributária", image: "https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=800&q=80", url: "", features: ["Gestão de IPTU, ISS, ITBI e taxas diversas", "Cadastro imobiliário e cadastro econômico", "Emissão de guias e carnês automatizada", "Integração com bancos e PIX", "Nota Fiscal Eletrônica de Serviços (NFS-e)"] },
     { id: "patrimonio", icone: "Package", title: "Patrimônio e Almoxarifado", description: "Controle total de bens patrimoniais e estoque de materiais", image: "https://images.unsplash.com/photo-1553413077-190dd305871c?w=800&q=80", url: "", features: ["Cadastro e tombamento de bens patrimoniais", "Controle de depreciação e reavaliação", "Gestão de almoxarifado e estoque", "Inventário com leitura de código de barras", "Transferência e movimentação de bens"] },
   ];
-  const [solucoes, setSolucoes] = useState<Array<{id:string;icone?:string;title:string;description:string;image:string;url:string;features:string[]}>>(() => { try { const s = localStorage.getItem("jeosSolucoes"); if (s) { const parsed = JSON.parse(s); return parsed.map((sol: any) => { if (!sol.icone) { const def = defaultSolucoes.find(d => d.id === sol.id); return { ...sol, icone: def?.icone ?? "Package" }; } return sol; }); } return defaultSolucoes; } catch { return defaultSolucoes; } });
+  const [solucoes, setSolucoes] = useState<Array<{id:string;icone?:string;title:string;description:string;image:string;url:string;features:string[]}>>(defaultSolucoes);
 
   const defaultStats = [
     { id: "stat1", valor: "+15 Anos", desc: "de Experiência", icone: "Award", ativo: true },
@@ -306,8 +299,8 @@ export default function App() {
     { id: "stat3", valor: "Suporte 24/7", desc: "Atendimento Contínuo", icone: "Headphones", ativo: true },
     { id: "stat4", valor: "Certificado", desc: "Segurança e Compliance", icone: "Shield", ativo: true },
   ];
-  const [stats, setStats] = useState<Array<{id:string;valor:string;desc:string;icone:string;ativo:boolean}>>(() => { try { const s = localStorage.getItem("jeosStats"); return s ? JSON.parse(s) : defaultStats; } catch { return defaultStats; } });
-  const [savedStats, setSavedStats] = useState<Array<{id:string;valor:string;desc:string;icone:string;ativo:boolean}>>(() => { try { const s = localStorage.getItem("jeosStats"); return s ? JSON.parse(s) : defaultStats; } catch { return defaultStats; } });
+  const [stats, setStats] = useState<Array<{id:string;valor:string;desc:string;icone:string;ativo:boolean}>>(defaultStats);
+  const [savedStats, setSavedStats] = useState<Array<{id:string;valor:string;desc:string;icone:string;ativo:boolean}>>(defaultStats);
 
   const defaultClientes = [
     { name: "Prefeitura Municipal de São Paulo", estado: "SP", logo: "https://images.unsplash.com/photo-1763431791977-efa5ea8c7997?w=200&q=80" },
@@ -323,14 +316,14 @@ export default function App() {
     { name: "Prefeitura de Manaus", estado: "AM", logo: "https://images.unsplash.com/photo-1589200412802-8a0fc9ce8875?w=200&q=80" },
     { name: "Câmara de Porto Alegre", estado: "RS", logo: "https://images.unsplash.com/photo-1621957674929-39c14c298291?w=200&q=80" },
   ];
-  const [clientes, setClientes] = useState<Array<{name:string;estado?:string;logo:string}>>(() => { try { const s = localStorage.getItem("jeosClientes"); return s ? JSON.parse(s) : defaultClientes; } catch { return defaultClientes; } });
+  const [clientes, setClientes] = useState<Array<{name:string;estado?:string;logo:string}>>(defaultClientes);
 
   const defaultDepoimentos = [
     { name: "Maria Silva", role: "Secretária de Finanças", city: "Prefeitura Municipal de Santos", testimonial: "A JEOS revolucionou nossa gestão financeira. O sistema de contabilidade é extremamente intuitivo e nos trouxe total conformidade com a legislação vigente.", photo: "https://images.unsplash.com/photo-1496180470114-6ef490f3ff22?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=200&q=80" },
     { name: "João Santos", role: "Diretor de RH", city: "Câmara Municipal de Campinas", testimonial: "O suporte da JEOS é excepcional. Sempre que precisamos, a equipe está disponível para nos auxiliar. O sistema de RH facilitou muito nossa rotina.", photo: "https://images.unsplash.com/photo-1578758837674-93ed0ab5fbab?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=200&q=80" },
     { name: "Ana Oliveira", role: "Controladora Geral", city: "Prefeitura de Ribeirão Preto", testimonial: "Com os sistemas integrados da JEOS, conseguimos aumentar nossa eficiência em 40%. A transparência nos processos melhorou significativamente.", photo: "https://images.unsplash.com/photo-1649589244330-09ca58e4fa64?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=200&q=80" },
   ];
-  const [depoimentos, setDepoimentos] = useState<Array<{name:string;role:string;city:string;testimonial:string;photo:string}>>(() => { try { const s = localStorage.getItem("jeosDepoimentos"); return s ? JSON.parse(s) : defaultDepoimentos; } catch { return defaultDepoimentos; } });
+  const [depoimentos, setDepoimentos] = useState<Array<{name:string;role:string;city:string;testimonial:string;photo:string}>>(defaultDepoimentos);
 
   const defaultCertidoes = [
     { titulo: "Certidão Negativa de Débitos - Receita Federal", validade: "Válida até: 15/06/2024", tipo: "Federal", arquivo: "", dataEmissao: "01/2024" },
@@ -340,8 +333,8 @@ export default function App() {
     { titulo: "Certidão Negativa Trabalhista - TST", validade: "Válida até: 30/06/2024", tipo: "Trabalhista", arquivo: "", dataEmissao: "01/2024" },
     { titulo: "Registro CNPJ - Receita Federal", validade: "Atualizado em: 01/01/2024", tipo: "Cadastral", arquivo: "", dataEmissao: "01/2024" },
   ];
-  const [certidoes, setCertidoes] = useState<Array<{titulo:string;validade:string;tipo:string;arquivo:string;dataEmissao?:string}>>(() => { try { const s = localStorage.getItem("jeosCertidoes"); return s ? JSON.parse(s).map((c: {titulo:string;validade:string;tipo:string;arquivo?:string;dataEmissao?:string}) => ({ dataEmissao: "", arquivo: "", ...c })) : defaultCertidoes; } catch { return defaultCertidoes; } });
-  const [savedCertidoes, setSavedCertidoes] = useState<Array<{titulo:string;validade:string;tipo:string;arquivo:string;dataEmissao?:string}>>(() => { try { const s = localStorage.getItem("jeosCertidoes"); return s ? JSON.parse(s).map((c: {titulo:string;validade:string;tipo:string;arquivo?:string;dataEmissao?:string}) => ({ dataEmissao: "", arquivo: "", ...c })) : defaultCertidoes; } catch { return defaultCertidoes; } });
+  const [certidoes, setCertidoes] = useState<Array<{titulo:string;validade:string;tipo:string;arquivo:string;dataEmissao?:string}>>(defaultCertidoes);
+  const [savedCertidoes, setSavedCertidoes] = useState<Array<{titulo:string;validade:string;tipo:string;arquivo:string;dataEmissao?:string}>>(defaultCertidoes);
   const [showAddCertidaoModal, setShowAddCertidaoModal] = useState(false);
   const [certidaoModoVersao, setCertidaoModoVersao] = useState(false);
   const [novaCertidaoForm, setNovaCertidaoForm] = useState({ titulo: "", tipo: "", validade: "", dataEmissao: "", arquivo: "" });
@@ -386,12 +379,8 @@ export default function App() {
     id, nome, cnpj: "", responsavel: "", cargo: "", telefone: "", foto: "",
     contratos: [], sistemasContratados: [], notasFiscais: [], relatorios: []
   });
-  const [entidades, setEntidades] = useState<Entidade[]>(() => {
-    try { const s = localStorage.getItem("jeosEntidades"); return s ? JSON.parse(s) : []; } catch { return []; }
-  });
-  const [clientUsers, setClientUsers] = useState<ClientUser[]>(() => {
-    try { const s = localStorage.getItem("jeosClientUsers"); return s ? JSON.parse(s) : []; } catch { return []; }
-  });
+  const [entidades, setEntidades] = useState<Entidade[]>([]);
+  const [clientUsers, setClientUsers] = useState<ClientUser[]>([]);
   const [loggedInUser, setLoggedInUser] = useState<ClientUser | null>(null);
   // Admin portal — subtabs e seleção de entidade/secretaria
   const [adminClientSubSection, setAdminClientSubSection] = useState<"entidades" | "usuarios">("entidades");
@@ -480,40 +469,72 @@ export default function App() {
       .slice(0, 200);                     // Limita tamanho máximo do input
   };
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // [SECURITY] Sanitiza inputs antes de qualquer processamento
     const safeEmail    = sanitizeInput(loginEmail);
     const safePassword = sanitizeInput(loginPassword);
-    const user = clientUsers.find(u => u.login === safeEmail && u.senha === safePassword);
-    if (user) {
-      const ent = entidades.find(e => e.id === user.entidadeId);
-      if (ent && !ent.ativo) {
-        setLoginError("Contrato Inativo ou Suspenso, entre em contato com o nosso suporte.");
-        return;
-      }
-      const sec = ent?.secretarias.find(s => s.id === user.secretariaId);
-      if (sec && sec.ativo === false) {
-        setLoginError("Contrato Inativo ou Suspenso, entre em contato com o nosso suporte.");
-        return;
-      }
-      setLoggedInUser(user);
-      setIsLoggedIn(true);
-      setShowLoginModal(false);
-      setLoginEmail("");
-      setLoginPassword("");
-      setLoginError("");
-    } else {
+    const { userId, error: authError } = await authLogin(safeEmail, safePassword);
+    if (authError || !userId) {
       setLoginError("E-mail ou senha incorretos. Verifique seus dados e tente novamente.");
+      return;
     }
+    const user = await fetchClientUserById(userId);
+    if (!user) {
+      setLoginError("Usuário não encontrado. Entre em contato com o suporte.");
+      return;
+    }
+    const ent = entidades.find(e => e.id === user.entidadeId);
+    if (ent && !ent.ativo) {
+      setLoginError("Contrato Inativo ou Suspenso, entre em contato com o nosso suporte.");
+      return;
+    }
+    const sec = ent?.secretarias.find(s => s.id === user.secretariaId);
+    if (sec && sec.ativo === false) {
+      setLoginError("Contrato Inativo ou Suspenso, entre em contato com o nosso suporte.");
+      return;
+    }
+    setLoggedInUser(user);
+    setIsLoggedIn(true);
+    setShowLoginModal(false);
+    setLoginEmail("");
+    setLoginPassword("");
+    setLoginError("");
   };
 
   const handleLogout = () => {
+    authLogout().catch(console.error);
     setIsLoggedIn(false);
     setLoggedInUser(null);
     setShowUserMenu(false);
     setCurrentModal(null);
   };
+
+  useEffect(() => {
+    Promise.all([
+      fetchSiteContent(),
+      fetchSolucoes(),
+      fetchStats(),
+      fetchClientes(),
+      fetchDepoimentos(),
+      fetchCertidoes(),
+      fetchBlogPosts(),
+      fetchEntidades(),
+      fetchClientUsers(),
+    ]).then(([sc, sol, st, cli, dep, cert, blog, ents, users]) => {
+      if (Object.keys(sc).length > 0) {
+        setSiteContent(prev => ({ ...prev, ...sc }));
+        setSavedSiteContent(prev => ({ ...prev, ...sc }));
+      }
+      if (sol.length > 0) setSolucoes(sol);
+      if (st.length > 0) { setStats(st); setSavedStats(st); }
+      if (cli.length > 0) setClientes(cli);
+      if (dep.length > 0) setDepoimentos(dep);
+      if (cert.length > 0) { setCertidoes(cert); setSavedCertidoes(cert); }
+      if (blog.length > 0) setBlogPosts(blog);
+      setEntidades(ents);
+      setClientUsers(users);
+    });
+  }, []);
 
   // [SECURITY] Kill-switch de inatividade: logout automático após 300s sem interação
   useEffect(() => {
@@ -596,29 +617,23 @@ export default function App() {
     ? "w-full text-sm text-gray-300 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-500/20 file:text-purple-300 hover:file:bg-purple-500/30 cursor-pointer"
     : "w-full text-sm text-gray-700 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200 cursor-pointer";
 
-  const saveContent = () => {
-    const errors: string[] = [];
-    const trySet = (key: string, value: string) => {
-      try { localStorage.setItem(key, value); }
-      catch { errors.push(key); }
-    };
-    trySet("jeosSiteContent", JSON.stringify(siteContent));
-    trySet("jeosSolucoes", JSON.stringify(solucoes));
-    trySet("jeosStats", JSON.stringify(stats));
-    setSavedStats([...stats]);
-    trySet("jeosClientes", JSON.stringify(clientes));
-    trySet("jeosDepoimentos", JSON.stringify(depoimentos));
-    trySet("jeosCertidoes", JSON.stringify(certidoes.map(c => ({ ...c, arquivo: c.arquivo ?? "" }))));
-    setSavedCertidoes([...certidoes]);
-    trySet("jeosBlogPosts", JSON.stringify(blogPosts));
-    trySet("jeosEntidades", JSON.stringify(entidades));
-    trySet("jeosClientUsers", JSON.stringify(clientUsers));
-    setSavedSiteContent({...siteContent});
-    if (errors.length > 0) {
-      alert(`Erro ao salvar: ${errors.join(", ")}. Verifique se há imagens muito grandes.`);
-    } else {
+  const saveContent = async () => {
+    try {
+      await Promise.all([
+        saveSiteContent(siteContent),
+        saveSolucoes(solucoes),
+        saveStats(stats),
+        saveClientes(clientes),
+        saveDepoimentos(depoimentos),
+        saveCertidoes(certidoes.map(c => ({ ...c, arquivo: c.arquivo ?? "" }))),
+      ]);
+      setSavedStats([...stats]);
+      setSavedCertidoes([...certidoes]);
+      setSavedSiteContent({...siteContent});
       setSavedFeedback(true);
       setTimeout(() => setSavedFeedback(false), 2500);
+    } catch {
+      alert('Erro ao salvar. Verifique a conexão e tente novamente.');
     }
   };
 
@@ -876,10 +891,25 @@ export default function App() {
       const updSec = (fn: (s: SecretariaData) => SecretariaData) => {
         if (adminSelEntidadeId && adminSelSecretariaId) updateSecretaria(adminSelEntidadeId, adminSelSecretariaId, fn);
       };
-      const saveTodo = () => {
+      const saveTodo = async () => {
         try {
-          localStorage.setItem("jeosEntidades", JSON.stringify(entidades));
-          localStorage.setItem("jeosClientUsers", JSON.stringify(clientUsers));
+          const ent = entidades.find(e => e.id === adminSelEntidadeId);
+          if (ent) {
+            await upsertEntidade(ent);
+            for (const sec of ent.secretarias) {
+              await upsertSecretaria(ent.id, sec);
+              for (const ct of sec.contratos ?? []) {
+                await upsertContrato(sec.id, ct);
+                for (const ad of ct.aditivos ?? []) {
+                  await upsertAditivo(ct.id, ad);
+                }
+              }
+              await upsertNotasFiscais(sec.id, sec.notasFiscais ?? []);
+              await upsertRelatorios(sec.id, sec.relatorios ?? []);
+              await upsertSistemas(sec.id, sec.sistemasContratados ?? []);
+            }
+          }
+          for (const u of clientUsers) { await updateClientUser(u); }
         } catch(e) { console.error(e); }
         setSavedFeedback(true); setTimeout(() => setSavedFeedback(false), 2500);
       };
@@ -1137,7 +1167,7 @@ export default function App() {
                                 </div>
                                 <div className="flex gap-2">
                                   <Button size="sm" variant="outline" onClick={() => { setEditUserForm({...user}); setShowAddModal("usuario"); }} className={isDarkMode ? "border-purple-500/50 text-purple-400 hover:bg-purple-500/10" : "border-purple-500 text-purple-600 hover:bg-purple-50"}>✎ Editar</Button>
-                                  <Button size="sm" variant="outline" onClick={() => setConfirmDelete({ label: user.nome, onConfirm: () => setClientUsers(prev => prev.filter(u => u.id !== user.id)) })} className="border-red-500/50 text-red-400 hover:bg-red-500/10">🗑</Button>
+                                  <Button size="sm" variant="outline" onClick={() => setConfirmDelete({ label: user.nome, onConfirm: () => { setClientUsers(prev => prev.filter(u => u.id !== user.id)); dbDeleteClientUser(user.id).catch(console.error); } })} className="border-red-500/50 text-red-400 hover:bg-red-500/10">🗑</Button>
                                 </div>
                               </CardContent>
                             </Card>
@@ -2412,15 +2442,18 @@ export default function App() {
                             </div>
                             <div className="flex justify-end gap-3">
                               <Button variant="outline" onClick={() => { setShowAddModal(null); setEditUserForm(null); }} className={isDarkMode ? "border-gray-500 text-black" : "border-gray-400 text-black"}>Cancelar</Button>
-                              <Button onClick={() => {
+                              <Button onClick={async () => {
                                 if (editUserForm) {
-                                  if (!editUserForm.nome || !editUserForm.login || !editUserForm.senha || !editUserForm.entidadeId || !editUserForm.secretariaId) return;
+                                  if (!editUserForm.nome || !editUserForm.login || !editUserForm.entidadeId || !editUserForm.secretariaId) return;
                                   setClientUsers(prev => prev.map(u => u.id === editUserForm.id ? editUserForm : u));
+                                  await updateClientUser(editUserForm);
                                   setEditUserForm(null);
                                 } else {
                                   if (!novoUserForm.nome || !novoUserForm.login || !novoUserForm.senha || !novoUserForm.entidadeId || !novoUserForm.secretariaId) return;
-                                  const id = `usr_${Date.now()}`;
-                                  setClientUsers(prev => [...prev, { id, ...novoUserForm }]);
+                                  const { error } = await createClientUser({ id: '', ...novoUserForm });
+                                  if (error) { alert(`Erro ao criar usuário: ${error}`); return; }
+                                  const updated = await fetchClientUsers();
+                                  setClientUsers(updated);
                                   setNovoUserForm({ nome: "", login: "", senha: "", entidadeId: "", secretariaId: "", cargo: "", telefone: "", foto: "" });
                                 }
                                 setShowAddModal(null);
@@ -3168,7 +3201,7 @@ export default function App() {
                                   className={isDarkMode ? "border-purple-500/50 text-purple-400 px-2.5" : "border-purple-500 text-purple-600 px-2.5"}>
                                   Editar ✎
                                 </Button>
-                                <Button size="sm" variant="outline" onClick={() => setConfirmDelete({ label: post.titulo, onConfirm: () => setBlogPosts(prev => prev.filter((_, idx) => idx !== i)) })}
+                                <Button size="sm" variant="outline" onClick={() => setConfirmDelete({ label: post.titulo, onConfirm: () => { setBlogPosts(prev => prev.filter((_, idx) => idx !== i)); deleteBlogPost(post.id).catch(console.error); } })}
                                   className="border-red-500/50 text-red-400 hover:bg-red-500/10 px-2.5">
                                   🗑 Excluir
                                 </Button>
@@ -3236,7 +3269,8 @@ export default function App() {
                               ? blogPosts.map((p, idx) => idx === editPostIdx ? { ...p, ...novoPostForm } : p)
                               : [...blogPosts, { ...novoPostForm, id: Date.now().toString() }];
                             setBlogPosts(newPosts);
-                            try { localStorage.setItem("jeosBlogPosts", JSON.stringify(newPosts)); } catch(e) { console.error(e); }
+                            const postToSave = editPostIdx !== null ? newPosts[editPostIdx] : newPosts[newPosts.length - 1];
+                            upsertBlogPost(postToSave).catch(console.error);
                             setShowAddPostModal(false);
                             setEditPostIdx(null);
                             setSavedFeedback(true);
