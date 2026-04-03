@@ -2,11 +2,7 @@
   "rewrites": [
     {
       "source": "/jprocesso/:path*",
-      "destination": "https://jprocesso.vercel.app/:path*",
-      "headers": {
-        "x-forwarded-host": "www.jeossistemas.com",
-        "x-forwarded-proto": "https"
-      }
+      "destination": "https://jprocesso.vercel.app/:path*"
     }
   ]
 }
