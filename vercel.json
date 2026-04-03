@@ -1,8 +1,14 @@
 {
-  "rewrites": [
+  "redirects": [
+    {
+      "source": "/jprocesso",
+      "destination": "https://jprocesso.vercel.app/",
+      "permanent": false
+    },
     {
       "source": "/jprocesso/:path*",
-      "destination": "https://jprocesso.vercel.app/:path*"
+      "destination": "https://jprocesso.vercel.app/:path*",
+      "permanent": false
     }
   ]
 }
