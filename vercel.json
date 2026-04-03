@@ -1,8 +1,0 @@
-{
-  "rewrites": [
-    {
-      "source": "/jprocesso/:path*",
-      "destination": "https://jprocesso.vercel.app/:path*"
-    }
-  ]
-}
