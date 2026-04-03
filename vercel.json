@@ -1,9 +1,8 @@
 {
-  "redirects": [
+  "rewrites": [
     {
       "source": "/jprocesso/:path*",
-      "destination": "https://jprocesso.vercel.app/:path*",
-      "permanent": false
+      "destination": "https://jprocesso.vercel.app/:path*"
     }
   ]
 }
