@@ -1419,7 +1419,7 @@ export default function App() {
                                 )}
                               </div>
                               <div className="flex justify-end gap-3">
-                                <Button variant="outline" onClick={() => { setShowContratoModal(false); setEditContratoId(null); }} className={isDarkMode ? "border-gray-500 text-black" : "border-gray-400 text-black"}>Cancelar</Button>
+                                <Button variant="outline" onClick={() => { setShowContratoModal(false); setEditContratoId(null); }} className={isDarkMode ? "border-gray-500 text-gray-300" : "border-gray-400 text-black"}>Cancelar</Button>
                                 <Button onClick={() => {
                                   if (!contratoForm.numero.trim()) return;
                                   if (editContratoId) {
@@ -1545,7 +1545,7 @@ export default function App() {
                             </div>
                             {/* Rodapé fixo com botões */}
                             <div className={`flex justify-end gap-3 px-5 py-3 border-t flex-shrink-0 ${isDarkMode ? "border-purple-500/20" : "border-gray-200"}`}>
-                              <Button variant="outline" onClick={() => { setShowAditivoModal(false); setAditivoParaContratoId(null); setEditAditivoId(null); setAditivoErroValor(null); }} className={isDarkMode ? "border-gray-500 text-black" : "border-gray-400 text-black"}>Cancelar</Button>
+                              <Button variant="outline" onClick={() => { setShowAditivoModal(false); setAditivoParaContratoId(null); setEditAditivoId(null); setAditivoErroValor(null); }} className={isDarkMode ? "border-gray-500 text-gray-300" : "border-gray-400 text-black"}>Cancelar</Button>
                                 <Button onClick={() => {
                                   if (aditivoForm.tipos.length === 0 || !aditivoForm.dataEncerramento) return;
                                   // Validação de valor para Acréscimo/Redução
@@ -2059,7 +2059,7 @@ export default function App() {
                         </div>
                       </div>
                       <div className="flex justify-end gap-3">
-                        <Button variant="outline" onClick={() => { setShowAddModal(null); setNovaEntidadeForm({ nome: "", tipo: "", cidade: "", responsavel: "", cnpj: "", telefone: "" }); setEditEntidadeId(null); }} className={isDarkMode ? "border-gray-500 text-black" : "border-gray-400 text-black"}>Cancelar</Button>
+                        <Button variant="outline" onClick={() => { setShowAddModal(null); setNovaEntidadeForm({ nome: "", tipo: "", cidade: "", responsavel: "", cnpj: "", telefone: "" }); setEditEntidadeId(null); }} className={isDarkMode ? "border-gray-500 text-gray-300" : "border-gray-400 text-black"}>Cancelar</Button>
                         <Button onClick={async () => { if (!novaEntidadeForm.nome.trim()) return; if (editEntidadeId) { const updated = { id: editEntidadeId, nome: novaEntidadeForm.nome.trim().toUpperCase(), tipo: novaEntidadeForm.tipo.trim(), cidade: novaEntidadeForm.cidade.trim(), responsavel: novaEntidadeForm.responsavel.trim(), cnpj: novaEntidadeForm.cnpj.trim(), telefone: novaEntidadeForm.telefone.trim(), ativo: true, secretarias: entidades.find(e => e.id === editEntidadeId)?.secretarias ?? [] }; setEntidades(prev => prev.map(e => e.id === editEntidadeId ? updated : e)); await upsertEntidade(updated); } else { const id = `ent_${Date.now()}`; const nova = { id, nome: novaEntidadeForm.nome.trim().toUpperCase(), tipo: novaEntidadeForm.tipo.trim(), cidade: novaEntidadeForm.cidade.trim(), responsavel: novaEntidadeForm.responsavel.trim(), cnpj: novaEntidadeForm.cnpj.trim(), telefone: novaEntidadeForm.telefone.trim(), ativo: true, secretarias: [] }; setEntidades(prev => [...prev, nova]); await upsertEntidade(nova); } setNovaEntidadeForm({ nome: "", tipo: "", cidade: "", responsavel: "", cnpj: "", telefone: "" }); setEditEntidadeId(null); setShowAddModal(null); }} className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700">{editEntidadeId ? "Salvar" : "Adicionar"}</Button>
                       </div>
                     </div>
@@ -2090,7 +2090,7 @@ export default function App() {
                         </div>
                       </div>
                       <div className="flex justify-end gap-3">
-                        <Button variant="outline" onClick={() => { setShowAddModal(null); setEditSecretariaId(null); setNovaSecretariaForm({ nome: "", secretario: "", telefone: "" }); }} className={isDarkMode ? "border-gray-500 text-black" : "border-gray-400 text-black"}>Cancelar</Button>
+                        <Button variant="outline" onClick={() => { setShowAddModal(null); setEditSecretariaId(null); setNovaSecretariaForm({ nome: "", secretario: "", telefone: "" }); }} className={isDarkMode ? "border-gray-500 text-gray-300" : "border-gray-400 text-black"}>Cancelar</Button>
                         <Button onClick={async () => { if (!novaSecretariaForm.nome.trim()) return; if (editSecretariaId) { setEntidades(prev => prev.map(e => e.id === adminSelEntidadeId ? { ...e, secretarias: e.secretarias.map(s => s.id === editSecretariaId ? { ...s, nome: novaSecretariaForm.nome.trim(), responsavel: novaSecretariaForm.secretario.trim(), telefone: novaSecretariaForm.telefone.trim() } : s) } : e)); const sec = entidades.find(e => e.id === adminSelEntidadeId)?.secretarias.find(s => s.id === editSecretariaId); if (sec && adminSelEntidadeId) await upsertSecretaria(adminSelEntidadeId, { ...sec, nome: novaSecretariaForm.nome.trim(), responsavel: novaSecretariaForm.secretario.trim(), telefone: novaSecretariaForm.telefone.trim() }); } else { const id = `sec_${Date.now()}`; const nova = emptySecretaria(id, novaSecretariaForm.nome.trim()); nova.responsavel = novaSecretariaForm.secretario.trim(); nova.telefone = novaSecretariaForm.telefone.trim(); setEntidades(prev => prev.map(e => e.id === adminSelEntidadeId ? { ...e, secretarias: [...e.secretarias, nova] } : e)); if (adminSelEntidadeId) await upsertSecretaria(adminSelEntidadeId, nova); } setEditSecretariaId(null); setNovaSecretariaForm({ nome: "", secretario: "", telefone: "" }); setShowAddModal(null); }} className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700">{editSecretariaId ? "Salvar" : "Adicionar"}</Button>
                       </div>
                     </div>
@@ -2112,7 +2112,7 @@ export default function App() {
                         <div><label className={labelClass}>Data de Início</label><input type="text" value={novoSistemaForm.dataInicio} onChange={e => setNovoSistemaForm(p => ({...p, dataInicio: maskDate(e.target.value)}))} className={inputClass} placeholder="DD/MM/AAAA" maxLength={10} /></div>
                       </div>
                       <div className="flex justify-end gap-3">
-                        <Button variant="outline" onClick={() => { setShowAddModal(null); setEditSistemaIndex(null); }} className={isDarkMode ? "border-gray-500 text-black" : "border-gray-400 text-black"}>Cancelar</Button>
+                        <Button variant="outline" onClick={() => { setShowAddModal(null); setEditSistemaIndex(null); }} className={isDarkMode ? "border-gray-500 text-gray-300" : "border-gray-400 text-black"}>Cancelar</Button>
                         <Button onClick={() => {
                           if (!novoSistemaForm.nome.trim()) return;
                           if (editSistemaIndex !== null) {
@@ -2154,7 +2154,7 @@ export default function App() {
                         )}
                       </div>
                       <div className="flex justify-end gap-3">
-                        <Button variant="outline" onClick={() => setPagarNfIndex(null)} className={isDarkMode ? "border-gray-500 text-black" : "border-gray-400 text-black"}>Cancelar</Button>
+                        <Button variant="outline" onClick={() => setPagarNfIndex(null)} className={isDarkMode ? "border-gray-500 text-gray-300" : "border-gray-400 text-black"}>Cancelar</Button>
                         <Button onClick={() => {
                           updSec(s => ({...s, notasFiscais: s.notasFiscais.map((x, idx) => {
                             if (idx !== pagarNfIndex) return x;
@@ -2217,7 +2217,7 @@ export default function App() {
                         )}
                       </div>
                       <div className="flex justify-end gap-3">
-                        <Button variant="outline" onClick={() => { setShowAddModal(null); setEditNfIndex(null); }} className={isDarkMode ? "border-gray-500 text-black" : "border-gray-400 text-black"}>Cancelar</Button>
+                        <Button variant="outline" onClick={() => { setShowAddModal(null); setEditNfIndex(null); }} className={isDarkMode ? "border-gray-500 text-gray-300" : "border-gray-400 text-black"}>Cancelar</Button>
                         <Button onClick={() => {
                           if (!novaNotaForm.numero.trim()) return;
                           const dados = {...novaNotaForm, status: editNfIndex !== null ? novaNotaForm.status : "Pendente"};
@@ -2309,7 +2309,7 @@ export default function App() {
                         )}
                       </div>
                       <div className="flex justify-end gap-3">
-                        <Button variant="outline" onClick={() => { setShowAddModal(null); setEditRelatorioIndex(null); }} className={isDarkMode ? "border-gray-500 text-black" : "border-gray-400 text-black"}>Cancelar</Button>
+                        <Button variant="outline" onClick={() => { setShowAddModal(null); setEditRelatorioIndex(null); }} className={isDarkMode ? "border-gray-500 text-gray-300" : "border-gray-400 text-black"}>Cancelar</Button>
                         <Button onClick={() => {
                           if (!novoRelatorioForm.titulo.trim()) return;
                           if (editRelatorioIndex !== null) {
@@ -2439,7 +2439,7 @@ export default function App() {
                               </div>
                             </div>
                             <div className="flex justify-end gap-3">
-                              <Button variant="outline" onClick={() => { setShowAddModal(null); setEditUserForm(null); }} className={isDarkMode ? "border-gray-500 text-black" : "border-gray-400 text-black"}>Cancelar</Button>
+                              <Button variant="outline" onClick={() => { setShowAddModal(null); setEditUserForm(null); }} className={isDarkMode ? "border-gray-500 text-gray-300" : "border-gray-400 text-black"}>Cancelar</Button>
                               <Button onClick={async () => {
                                 if (editUserForm) {
                                   if (!editUserForm.nome || !editUserForm.login || !editUserForm.entidadeId || !editUserForm.secretariaId) return;
@@ -2481,7 +2481,7 @@ export default function App() {
                       </div>
                       <p className={`text-sm mb-6 ${isDarkMode ? "text-gray-300" : "text-gray-700"}`}>Excluir <span className="font-semibold text-red-400">"{confirmDelete.label}"</span>?</p>
                       <div className="flex justify-end gap-3">
-                        <Button variant="outline" onClick={() => setConfirmDelete(null)} className={isDarkMode ? "border-gray-500 text-gray-900" : "border-gray-400 text-gray-900"}>Cancelar</Button>
+                        <Button variant="outline" onClick={() => setConfirmDelete(null)} className={isDarkMode ? "border-gray-500 text-gray-300" : "border-gray-400 text-gray-900"}>Cancelar</Button>
                         <Button onClick={() => { confirmDelete.onConfirm(); setConfirmDelete(null); }} className="bg-red-600 hover:bg-red-700 text-white">Sim, Excluir</Button>
                       </div>
                     </div>
@@ -2920,7 +2920,7 @@ export default function App() {
                                 </div>
                               </div>
                               <div className="flex justify-end gap-3 pt-2 border-t border-purple-500/20">
-                                <Button variant="outline" onClick={() => { setAdminEditIndex(null); setEditBuffer(null); }} className={isDarkMode ? "border-gray-500 text-gray-900" : "border-gray-400 text-gray-900"}>Cancelar</Button>
+                                <Button variant="outline" onClick={() => { setAdminEditIndex(null); setEditBuffer(null); }} className={isDarkMode ? "border-gray-500 text-gray-300" : "border-gray-400 text-gray-900"}>Cancelar</Button>
                                 <Button onClick={() => { setStats(prev => prev.map((s, idx) => idx === i ? { ...s, ...(editBuffer as any) } : s)); setAdminEditIndex(null); setEditBuffer(null); }} className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700">Confirmar Alterações</Button>
                               </div>
                             </div>
@@ -3380,7 +3380,7 @@ export default function App() {
                             </div>
                             {(editBuffer as any).image && <img src={(editBuffer as any).image} alt={(editBuffer as any).title} className="h-24 rounded-lg object-cover" />}
                             <div className="flex justify-end gap-3 pt-4 border-t border-purple-500/20">
-                              <Button variant="outline" onClick={() => { setAdminEditIndex(null); setEditBuffer(null); }} className={isDarkMode ? "border-gray-500 text-gray-900" : "border-gray-400 text-gray-900"}>
+                              <Button variant="outline" onClick={() => { setAdminEditIndex(null); setEditBuffer(null); }} className={isDarkMode ? "border-gray-500 text-gray-300" : "border-gray-400 text-gray-900"}>
                                 Cancelar
                               </Button>
                               <Button onClick={() => { setSolucoes(prev => prev.map((s, idx) => idx === i ? {...s, ...(editBuffer as any)} : s)); setAdminEditIndex(null); setEditBuffer(null); }} className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white">
@@ -3477,7 +3477,7 @@ export default function App() {
                               {(editBuffer as any).logo && <img src={(editBuffer as any).logo} alt={(editBuffer as any).name} className="mt-2 h-16 rounded object-contain" />}
                             </div>
                             <div className="flex justify-end gap-3 pt-3 border-t border-purple-500/20">
-                              <Button variant="outline" onClick={() => { setAdminEditIndex(null); setEditBuffer(null); }} className={isDarkMode ? "border-gray-500 text-gray-900" : "border-gray-400 text-gray-900"}>Cancelar</Button>
+                              <Button variant="outline" onClick={() => { setAdminEditIndex(null); setEditBuffer(null); }} className={isDarkMode ? "border-gray-500 text-gray-300" : "border-gray-400 text-gray-900"}>Cancelar</Button>
                               <Button onClick={() => { setClientes(prev => prev.map((c, idx) => idx === i ? {...c, ...(editBuffer as any)} : c)); setAdminEditIndex(null); setEditBuffer(null); }} className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white"><CheckCircle2 className="w-4 h-4 mr-2" />Confirmar</Button>
                             </div>
                           </div>
@@ -3584,7 +3584,7 @@ export default function App() {
                               <textarea rows={3} value={(editBuffer as any).testimonial ?? ""} onChange={e => setEditBuffer(prev => ({...prev!, testimonial: e.target.value}))} className={inputClass} />
                             </div>
                             <div className="flex justify-end gap-3 pt-3 border-t border-purple-500/20">
-                              <Button variant="outline" onClick={() => { setAdminEditIndex(null); setEditBuffer(null); }} className={isDarkMode ? "border-gray-500 text-gray-900" : "border-gray-400 text-gray-900"}>Cancelar</Button>
+                              <Button variant="outline" onClick={() => { setAdminEditIndex(null); setEditBuffer(null); }} className={isDarkMode ? "border-gray-500 text-gray-300" : "border-gray-400 text-gray-900"}>Cancelar</Button>
                               <Button onClick={() => { setDepoimentos(prev => prev.map((d, idx) => idx === i ? {...d, ...(editBuffer as any)} : d)); setAdminEditIndex(null); setEditBuffer(null); }} className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white"><CheckCircle2 className="w-4 h-4 mr-2" />Confirmar</Button>
                             </div>
                           </div>
@@ -3690,7 +3690,7 @@ export default function App() {
                                         {(editBuffer as any).arquivo && <p className="text-green-400 text-xs mt-1">✓ Arquivo carregado</p>}
                                       </div>
                                       <div className="flex justify-end gap-3 pt-3 border-t border-purple-500/20">
-                                        <Button variant="outline" onClick={() => { setAdminEditIndex(null); setEditBuffer(null); }} className={isDarkMode ? "border-gray-500 text-gray-900" : "border-gray-400 text-gray-900"}>Cancelar</Button>
+                                        <Button variant="outline" onClick={() => { setAdminEditIndex(null); setEditBuffer(null); }} className={isDarkMode ? "border-gray-500 text-gray-300" : "border-gray-400 text-gray-900"}>Cancelar</Button>
                                         <Button onClick={() => { setCertidoes(prev => prev.map((c, idx) => idx === i ? {...c, ...(editBuffer as any)} : c)); setAdminEditIndex(null); setEditBuffer(null); }} className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white"><CheckCircle2 className="w-4 h-4 mr-2" />Confirmar</Button>
                                       </div>
                                     </div>
@@ -3735,7 +3735,7 @@ export default function App() {
                                         {(editBuffer as any).arquivo && <p className="text-green-400 text-xs mt-1">✓ Arquivo carregado</p>}
                                       </div>
                                       <div className="flex justify-end gap-3 pt-3 border-t border-purple-500/20">
-                                        <Button variant="outline" onClick={() => { setAdminEditIndex(null); setEditBuffer(null); }} className={isDarkMode ? "border-gray-500 text-gray-900" : "border-gray-400 text-gray-900"}>Cancelar</Button>
+                                        <Button variant="outline" onClick={() => { setAdminEditIndex(null); setEditBuffer(null); }} className={isDarkMode ? "border-gray-500 text-gray-300" : "border-gray-400 text-gray-900"}>Cancelar</Button>
                                         <Button onClick={() => { setCertidoes(prev => prev.map((c, idx) => idx === i ? {...c, ...(editBuffer as any)} : c)); setAdminEditIndex(null); setEditBuffer(null); }} className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white"><CheckCircle2 className="w-4 h-4 mr-2" />Confirmar</Button>
                                       </div>
                                     </div>
@@ -3773,7 +3773,7 @@ export default function App() {
                 Tem certeza que deseja excluir <span className="font-semibold text-red-400">"{confirmDelete.label}"</span>?
               </p>
               <div className="flex justify-end gap-3">
-                <Button variant="outline" onClick={() => setConfirmDelete(null)} className={isDarkMode ? "border-gray-500 text-gray-900" : "border-gray-400 text-gray-900"}>
+                <Button variant="outline" onClick={() => setConfirmDelete(null)} className={isDarkMode ? "border-gray-500 text-gray-300" : "border-gray-400 text-gray-900"}>
                   Cancelar
                 </Button>
                 <Button onClick={() => { confirmDelete.onConfirm(); setConfirmDelete(null); }} className="bg-red-600 hover:bg-red-700 text-white">
@@ -3816,7 +3816,7 @@ export default function App() {
               </div>
             </div>
             <div className="flex justify-end gap-3 p-6 border-t border-purple-500/20">
-              <Button variant="outline" onClick={() => setShowAddClienteModal(false)} className={isDarkMode ? "border-gray-500 text-gray-900" : "border-gray-400 text-gray-900"}>Cancelar</Button>
+              <Button variant="outline" onClick={() => setShowAddClienteModal(false)} className={isDarkMode ? "border-gray-500 text-gray-300" : "border-gray-400 text-gray-900"}>Cancelar</Button>
               <Button onClick={() => { if (!novoClienteForm.name.trim()) return; setClientes(prev => [...prev, { name: novoClienteForm.name, estado: novoClienteForm.estado, logo: novoClienteForm.logo }]); setShowAddClienteModal(false); }} className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700">Adicionar</Button>
             </div>
           </div>
@@ -3889,7 +3889,7 @@ export default function App() {
               </div>
             </div>
             <div className="flex justify-end gap-3 p-6 border-t border-purple-500/20">
-              <Button variant="outline" onClick={() => setShowAddCertidaoModal(false)} className={isDarkMode ? "border-gray-500 text-gray-900" : "border-gray-400 text-gray-900"}>Cancelar</Button>
+              <Button variant="outline" onClick={() => setShowAddCertidaoModal(false)} className={isDarkMode ? "border-gray-500 text-gray-300" : "border-gray-400 text-gray-900"}>Cancelar</Button>
               <Button onClick={() => { if (!novaCertidaoForm.titulo.trim()) return; setCertidoes(prev => [...prev, { titulo: novaCertidaoForm.titulo, tipo: novaCertidaoForm.tipo, validade: novaCertidaoForm.validade, dataEmissao: novaCertidaoForm.dataEmissao, arquivo: novaCertidaoForm.arquivo }]); setShowAddCertidaoModal(false); }} className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700">Adicionar</Button>
             </div>
           </div>
@@ -3933,7 +3933,7 @@ export default function App() {
               </div>
             </div>
             <div className="flex justify-end gap-3 p-6 border-t border-purple-500/20">
-              <Button variant="outline" onClick={() => setShowAddDepoimentoModal(false)} className={isDarkMode ? "border-gray-500 text-gray-900" : "border-gray-400 text-gray-900"}>Cancelar</Button>
+              <Button variant="outline" onClick={() => setShowAddDepoimentoModal(false)} className={isDarkMode ? "border-gray-500 text-gray-300" : "border-gray-400 text-gray-900"}>Cancelar</Button>
               <Button onClick={() => { if (!novoDepoimentoForm.name.trim()) return; setDepoimentos(prev => [...prev, { name: novoDepoimentoForm.name, role: novoDepoimentoForm.role, city: novoDepoimentoForm.city, testimonial: novoDepoimentoForm.testimonial, photo: novoDepoimentoForm.photo }]); setShowAddDepoimentoModal(false); }} className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700">Adicionar</Button>
             </div>
           </div>
@@ -3990,7 +3990,7 @@ export default function App() {
               </div>
             </div>
             <div className="flex justify-end gap-3 p-6 border-t border-purple-500/20">
-              <Button variant="outline" onClick={() => setShowAddStatModal(false)} className={isDarkMode ? "border-gray-500 text-gray-900" : "border-gray-400 text-gray-900"}>Cancelar</Button>
+              <Button variant="outline" onClick={() => setShowAddStatModal(false)} className={isDarkMode ? "border-gray-500 text-gray-300" : "border-gray-400 text-gray-900"}>Cancelar</Button>
               <Button onClick={() => { if (!novaStatForm.valor.trim()) return; setStats(prev => [...prev, { id: `stat-${Date.now()}`, valor: novaStatForm.valor, desc: novaStatForm.desc, icone: novaStatForm.icone, ativo: true }]); setShowAddStatModal(false); }} className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700">Adicionar</Button>
             </div>
           </div>
@@ -4060,7 +4060,7 @@ export default function App() {
               {novaSolucaoForm.image && <img src={novaSolucaoForm.image} alt="preview" className="h-24 rounded-lg object-cover" />}
             </div>
             <div className="flex justify-end gap-3 p-6 border-t border-purple-500/20">
-              <Button variant="outline" onClick={() => setShowAddSolucaoModal(false)} className={isDarkMode ? "border-gray-500 text-gray-900" : "border-gray-400 text-gray-900"}>
+              <Button variant="outline" onClick={() => setShowAddSolucaoModal(false)} className={isDarkMode ? "border-gray-500 text-gray-300" : "border-gray-400 text-gray-900"}>
                 Cancelar
               </Button>
               <Button onClick={() => {
