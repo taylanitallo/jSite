@@ -5454,13 +5454,13 @@ export default function App() {
               <CardContent className="space-y-6">
                 <div className="grid md:grid-cols-2 gap-6">
                   <div className={isDarkMode 
-                    ? "aspect-video bg-slate-800 rounded-lg overflow-hidden border border-purple-500/20"
-                    : "aspect-video bg-gray-100 rounded-lg overflow-hidden border border-gray-200"
+                    ? "aspect-video bg-slate-800 rounded-lg overflow-hidden border border-purple-500/20 flex items-center justify-center"
+                    : "aspect-video bg-gray-100 rounded-lg overflow-hidden border border-gray-200 flex items-center justify-center"
                   }>
                     <ImageWithFallback 
                       src={products.find(p => p.id === selectedProduct)?.image || ""} 
                       alt={products.find(p => p.id === selectedProduct)?.title || ""}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-contain"
                     />
                   </div>
                   <div>
